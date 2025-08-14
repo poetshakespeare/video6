@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Trash2, Star, Calendar, MessageCircle, ArrowLeft, Edit3, Tv } from 'lucide-react';
+import { ShoppingCart, Trash2, Star, Calendar, MessageCircle, ArrowLeft, Edit3, Tv, DollarSign, CreditCard } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { PriceCard } from '../components/PriceCard';
 import { CheckoutModal, OrderData } from '../components/CheckoutModal';
@@ -8,7 +8,7 @@ import { sendOrderToWhatsApp } from '../utils/whatsapp';
 import { IMAGE_BASE_URL, POSTER_SIZE } from '../config/api';
 
 export function Cart() {
-  const { state, removeItem, clearCart, calculateItemPrice, calculateTotalPrice } = useCart();
+  const { state, removeItem, clearCart, updatePaymentType, calculateItemPrice, calculateTotalPrice, calculateTotalByPaymentType } = useCart();
   const [showCheckoutModal, setShowCheckoutModal] = React.useState(false);
 
   const handleCheckoutConfirm = (orderData: OrderData) => {
@@ -38,6 +38,7 @@ export function Cart() {
   };
 
   const totalPrice = calculateTotalPrice();
+  const totalsByPaymentType = calculateTotalByPaymentType();
   const movieCount = state.items.filter(item => item.type === 'movie').length;
   const seriesCount = state.items.filter(item => item.type === 'tv').length;
   const animeCount = state.items.filter(item => isAnime(item)).length;
@@ -125,6 +126,37 @@ export function Cart() {
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
+                    {/* Payment Type Selection */}
+                    <div className="mb-3">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-gray-700">Tipo de pago:</span>
+                        <div className="flex space-x-1">
+                          <button
+                            onClick={() => updatePaymentType(item.id, 'cash')}
+                            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                              item.paymentType === 'cash'
+                                ? 'bg-green-500 text-white'
+                                : 'bg-gray-200 text-gray-600 hover:bg-green-100'
+                            }`}
+                          >
+                            <DollarSign className="h-3 w-3 inline mr-1" />
+                            Efectivo
+                          </button>
+                          <button
+                            onClick={() => updatePaymentType(item.id, 'transfer')}
+                            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                              item.paymentType === 'transfer'
+                                ? 'bg-orange-500 text-white'
+                                : 'bg-gray-200 text-gray-600 hover:bg-orange-100'
+                            }`}
+                          >
+                            <CreditCard className="h-3 w-3 inline mr-1" />
+                            Transferencia (+10%)
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
                     <Link
                       to={getItemUrl(item)}
                       className="block hover:text-blue-600 transition-colors"
@@ -161,12 +193,22 @@ export function Cart() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex-shrink-0 mb-4">
-                    <PriceCard 
-                      type={item.type}
-                      selectedSeasons={item.selectedSeasons}
-                      isAnime={isAnime(item)}
-                    />
+                  <div className="flex-shrink-0 mb-4 ml-4">
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-3 border-2 border-green-200 shadow-sm min-w-[140px]">
+                      <div className="text-center">
+                        <div className="text-xs font-medium text-green-700 mb-1">
+                          {item.paymentType === 'cash' ? 'Efectivo' : 'Transferencia'}
+                        </div>
+                        <div className="text-lg font-bold text-green-800">
+                          ${calculateItemPrice(item).toLocaleString()} CUP
+                        </div>
+                        {item.paymentType === 'transfer' && (
+                          <div className="text-xs text-orange-600 mt-1">
+                            +10% incluido
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Action Buttons */}
@@ -218,9 +260,34 @@ export function Cart() {
                 <span className="text-lg mr-2">💰</span>
                 Desglose de Precios
               </h4>
+              
+              {/* Desglose por tipo de pago */}
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <DollarSign className="h-4 w-4 text-green-600 mr-1" />
+                      <span className="text-sm font-medium text-green-700">Efectivo</span>
+                    </div>
+                    <span className="font-bold text-green-800">${totalsByPaymentType.cash.toLocaleString()} CUP</span>
+                  </div>
+                </div>
+                
+                <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <CreditCard className="h-4 w-4 text-orange-600 mr-1" />
+                      <span className="text-sm font-medium text-orange-700">Transferencia</span>
+                    </div>
+                    <span className="font-bold text-orange-800">${totalsByPaymentType.transfer.toLocaleString()} CUP</span>
+                  </div>
+                </div>
+              </div>
+              
               <div className="space-y-3">
                 {state.items.map((item) => {
                   const itemPrice = calculateItemPrice(item);
+                  const basePrice = item.type === 'movie' ? 80 : (item.selectedSeasons?.length || 1) * 300;
                   return (
                     <div key={`${item.type}-${item.id}`} className="flex justify-between items-center bg-white rounded-lg p-3 border border-gray-200">
                       <div className="flex-1">
@@ -231,13 +298,27 @@ export function Cart() {
                             ` • ${item.selectedSeasons.length} temporada${item.selectedSeasons.length > 1 ? 's' : ''}`
                           }
                           {isAnime(item) && ' • Anime'}
+                          <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
+                            item.paymentType === 'cash' 
+                              ? 'bg-green-100 text-green-700' 
+                              : 'bg-orange-100 text-orange-700'
+                          }`}>
+                            {item.paymentType === 'cash' ? 'Efectivo' : 'Transferencia'}
+                          </span>
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-green-600">${itemPrice.toLocaleString()} CUP</p>
+                        <p className={`font-bold ${item.paymentType === 'cash' ? 'text-green-600' : 'text-orange-600'}`}>
+                          ${itemPrice.toLocaleString()} CUP
+                        </p>
+                        {item.paymentType === 'transfer' && (
+                          <p className="text-xs text-gray-500">
+                            Base: ${basePrice.toLocaleString()} CUP
+                          </p>
+                        )}
                         {item.type === 'tv' && item.selectedSeasons && item.selectedSeasons.length > 0 && (
                           <p className="text-xs text-gray-500">
-                            ${(itemPrice / item.selectedSeasons.length).toLocaleString()} CUP/temp.
+                            ${Math.round(itemPrice / item.selectedSeasons.length).toLocaleString()} CUP/temp.
                           </p>
                         )}
                       </div>
@@ -350,6 +431,10 @@ export function Cart() {
           isOpen={showCheckoutModal}
           onClose={() => setShowCheckoutModal(false)}
           onConfirm={handleCheckoutConfirm}
+          preselectedPaymentTypes={state.items.reduce((acc, item) => {
+            acc[item.id] = item.paymentType || 'cash';
+            return acc;
+          }, {} as Record<number, 'cash' | 'transfer'>)}
         />
       </div>
     </div>

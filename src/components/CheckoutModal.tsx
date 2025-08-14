@@ -6,6 +6,7 @@ interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (orderData: OrderData) => void;
+  preselectedPaymentTypes?: Record<number, 'cash' | 'transfer'>;
 }
 
 export interface OrderData {
@@ -50,7 +51,8 @@ const DELIVERY_ZONES = {
 };
 
 export function CheckoutModal({ isOpen, onClose, onConfirm }: CheckoutModalProps) {
-  const { state, calculateItemPrice } = useCart();
+export function CheckoutModal({ isOpen, onClose, onConfirm, preselectedPaymentTypes = {} }: CheckoutModalProps) {
+  const { state, calculateItemPrice, calculateTotalByPaymentType } = useCart();
   const [formData, setFormData] = useState({
     fullName: '',
     idCard: '',
@@ -60,6 +62,17 @@ export function CheckoutModal({ isOpen, onClose, onConfirm }: CheckoutModalProps
   const [paymentMethod, setPaymentMethod] = useState<'transfer' | 'cash' | ''>('');
   const [deliveryZone, setDeliveryZone] = useState('');
   const [isFormValid, setIsFormValid] = useState(false);
+  
+  // Determinar el método de pago predominante basado en los items del carrito
+  const totalsByType = calculateTotalByPaymentType();
+  const predominantPaymentMethod = totalsByType.transfer > totalsByType.cash ? 'transfer' : 'cash';
+  
+  // Establecer el método de pago por defecto basado en la selección del carrito
+  React.useEffect(() => {
+    if (paymentMethod === '' && (totalsByType.cash > 0 || totalsByType.transfer > 0)) {
+      setPaymentMethod(predominantPaymentMethod);
+    }
+  }, [totalsByType, predominantPaymentMethod, paymentMethod]);
 
   // Generar ID de orden único
   const generateOrderId = () => {
@@ -70,11 +83,10 @@ export function CheckoutModal({ isOpen, onClose, onConfirm }: CheckoutModalProps
 
   // Calcular costos
   const calculateCosts = () => {
-    const subtotal = state.items.reduce((total, item) => {
-      return total + calculateItemPrice(item);
-    }, 0);
+    const subtotal = totalsByType.cash + totalsByType.transfer;
 
-    const transferFee = paymentMethod === 'transfer' ? Math.round(subtotal * 0.1) : 0;
+    // Si hay items con transferencia, no aplicar recargo adicional ya que ya está incluido
+    const transferFee = 0;
     const deliveryCost = deliveryZone ? DELIVERY_ZONES[deliveryZone as keyof typeof DELIVERY_ZONES] || 0 : 0;
     const total = subtotal + transferFee + deliveryCost;
 
@@ -275,7 +287,12 @@ export function CheckoutModal({ isOpen, onClose, onConfirm }: CheckoutModalProps
                       />
                       <div className="flex-1">
                         <div className="font-medium text-gray-900">Transferencia Bancaria</div>
-                        <div className="text-sm text-gray-600">Recargo del 10% sobre el subtotal</div>
+                        <div className="text-sm text-gray-600">
+                          {totalsByType.transfer > 0 
+                            ? `Items con transferencia: $${totalsByType.transfer.toLocaleString()} CUP (10% incluido)`
+                            : 'Recargo del 10% ya incluido en precios'
+                          }
+                        </div>
                       </div>
                     </label>
                     
@@ -290,7 +307,12 @@ export function CheckoutModal({ isOpen, onClose, onConfirm }: CheckoutModalProps
                       />
                       <div className="flex-1">
                         <div className="font-medium text-gray-900">Efectivo</div>
-                        <div className="text-sm text-gray-600">Pago contra entrega</div>
+                        <div className="text-sm text-gray-600">
+                          {totalsByType.cash > 0 
+                            ? `Items en efectivo: $${totalsByType.cash.toLocaleString()} CUP`
+                            : 'Pago contra entrega'
+                          }
+                        </div>
                       </div>
                     </label>
                   </div>
@@ -309,6 +331,7 @@ export function CheckoutModal({ isOpen, onClose, onConfirm }: CheckoutModalProps
                   <div className="space-y-3 mb-6 max-h-60 overflow-y-auto">
                     {state.items.map((item) => {
                       const itemPrice = calculateItemPrice(item);
+                      const basePrice = item.type === 'movie' ? 80 : (item.selectedSeasons?.length || 1) * 300;
                       return (
                         <div key={`${item.type}-${item.id}`} className="flex justify-between items-start p-3 bg-white rounded-lg border border-gray-100">
                           <div className="flex-1">
@@ -318,10 +341,24 @@ export function CheckoutModal({ isOpen, onClose, onConfirm }: CheckoutModalProps
                               {item.selectedSeasons && item.selectedSeasons.length > 0 && 
                                 ` • ${item.selectedSeasons.length} temporada${item.selectedSeasons.length > 1 ? 's' : ''}`
                               }
+                              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
+                                item.paymentType === 'cash' 
+                                  ? 'bg-green-100 text-green-700' 
+                                  : 'bg-orange-100 text-orange-700'
+                              }`}>
+                                {item.paymentType === 'cash' ? 'Efectivo' : 'Transferencia'}
+                              </span>
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="font-bold text-green-600 text-sm">${itemPrice} CUP</p>
+                            <p className={`font-bold text-sm ${item.paymentType === 'cash' ? 'text-green-600' : 'text-orange-600'}`}>
+                              ${itemPrice.toLocaleString()} CUP
+                            </p>
+                            {item.paymentType === 'transfer' && (
+                              <p className="text-xs text-gray-500">
+                                Base: ${basePrice.toLocaleString()} CUP
+                              </p>
+                            )}
                           </div>
                         </div>
                       );
@@ -330,12 +367,26 @@ export function CheckoutModal({ isOpen, onClose, onConfirm }: CheckoutModalProps
 
                   {/* Cálculos */}
                   <div className="border-t border-gray-200 pt-4 space-y-3">
+                    {totalsByType.cash > 0 && (
+                      <div className="flex justify-between items-center text-green-600">
+                        <span>Subtotal (Efectivo):</span>
+                        <span className="font-semibold">${totalsByType.cash.toLocaleString()} CUP</span>
+                      </div>
+                    )}
+                    
+                    {totalsByType.transfer > 0 && (
+                      <div className="flex justify-between items-center text-orange-600">
+                        <span>Subtotal (Transferencia):</span>
+                        <span className="font-semibold">${totalsByType.transfer.toLocaleString()} CUP</span>
+                      </div>
+                    )}
+                    
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Subtotal:</span>
                       <span className="font-semibold">${costs.subtotal} CUP</span>
                     </div>
                     
-                    {paymentMethod === 'transfer' && (
+                    {costs.transferFee > 0 && (
                       <div className="flex justify-between items-center text-orange-600">
                         <span>Recargo transferencia (10%):</span>
                         <span className="font-semibold">+${costs.transferFee} CUP</span>

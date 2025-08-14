@@ -20,8 +20,10 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
         ? ` (Temporadas: ${item.selectedSeasons.sort((a, b) => a - b).join(', ')})` 
         : '';
       const itemType = item.type === 'movie' ? 'Película' : 'Serie';
-      const itemPrice = item.type === 'movie' ? 80 : (item.selectedSeasons?.length || 1) * 300;
-      return `• ${item.title}${seasonInfo}\n  Tipo: ${itemType}\n  Precio: $${itemPrice} CUP`;
+      const basePrice = item.type === 'movie' ? 80 : (item.selectedSeasons?.length || 1) * 300;
+      const finalPrice = item.paymentType === 'transfer' ? Math.round(basePrice * 1.1) : basePrice;
+      const paymentTypeText = item.paymentType === 'transfer' ? 'Transferencia (+10%)' : 'Efectivo';
+      return `• ${item.title}${seasonInfo}\n  Tipo: ${itemType}\n  Pago: ${paymentTypeText}\n  Precio: $${finalPrice} CUP`;
     })
     .join('\n\n');
 
@@ -40,7 +42,28 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
   message += `🎯 *PRODUCTOS SOLICITADOS:*\n${itemsList}\n\n`;
   
   message += `💰 *RESUMEN DE COSTOS:*\n`;
-  message += `• Subtotal: $${subtotal} CUP\n`;
+  
+  // Desglosar por tipo de pago
+  const cashItems = items.filter(item => item.paymentType === 'cash');
+  const transferItems = items.filter(item => item.paymentType === 'transfer');
+  
+  if (cashItems.length > 0) {
+    const cashTotal = cashItems.reduce((total, item) => {
+      const basePrice = item.type === 'movie' ? 80 : (item.selectedSeasons?.length || 1) * 300;
+      return total + basePrice;
+    }, 0);
+    message += `• Subtotal (Efectivo): $${cashTotal} CUP\n`;
+  }
+  
+  if (transferItems.length > 0) {
+    const transferTotal = transferItems.reduce((total, item) => {
+      const basePrice = item.type === 'movie' ? 80 : (item.selectedSeasons?.length || 1) * 300;
+      return total + Math.round(basePrice * 1.1);
+    }, 0);
+    message += `• Subtotal (Transferencia): $${transferTotal} CUP\n`;
+  }
+  
+  message += `• Subtotal Total: $${subtotal} CUP\n`;
   
   if (transferFee > 0) {
     message += `• Recargo transferencia (10%): +$${transferFee} CUP\n`;
