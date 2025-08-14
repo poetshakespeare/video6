@@ -3,25 +3,17 @@ import { Link } from 'react-router-dom';
 import { ShoppingCart, Trash2, Star, Calendar, MessageCircle, ArrowLeft, Edit3, Tv } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { PriceCard } from '../components/PriceCard';
-import { sendToWhatsApp } from '../utils/whatsapp';
+import { CheckoutModal, OrderData } from '../components/CheckoutModal';
+import { sendOrderToWhatsApp } from '../utils/whatsapp';
 import { IMAGE_BASE_URL, POSTER_SIZE } from '../config/api';
 
 export function Cart() {
   const { state, removeItem, clearCart, calculateItemPrice, calculateTotalPrice } = useCart();
+  const [showCheckoutModal, setShowCheckoutModal] = React.useState(false);
 
-  const handleWhatsAppSend = () => {
-    if (state.items.length > 0) {
-      // Formatear items para WhatsApp incluyendo temporadas seleccionadas y precios
-      const formattedItems = state.items.map(item => ({
-        ...item,
-        title: item.type === 'tv' && item.selectedSeasons && item.selectedSeasons.length > 0
-          ? `${item.title} (Temporadas: ${item.selectedSeasons.sort((a, b) => a - b).join(', ')})`
-          : item.title,
-        price: calculateItemPrice(item)
-      }));
-      const totalPrice = calculateTotalPrice();
-      sendToWhatsApp(formattedItems, totalPrice);
-    }
+  const handleCheckoutConfirm = (orderData: OrderData) => {
+    sendOrderToWhatsApp(orderData);
+    setShowCheckoutModal(false);
   };
 
   const getItemUrl = (item: any) => {
@@ -337,26 +329,28 @@ export function Cart() {
 
             {/* WhatsApp Button */}
             <button
-              onClick={handleWhatsAppSend}
-              className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center transform hover:scale-105 hover:shadow-lg"
+              onClick={() => setShowCheckoutModal(true)}
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center transform hover:scale-105 hover:shadow-lg"
             >
               <MessageCircle className="mr-3 h-6 w-6" />
-              Enviar Pedido por WhatsApp
+              Proceder al Checkout
             </button>
             
             <div className="mt-4 p-4 bg-green-50 rounded-xl border border-green-100">
               <p className="text-sm text-green-700 text-center flex items-center justify-center">
                 <span className="mr-2">📱</span>
-                Tu pedido (${totalPrice.toLocaleString()} CUP) será enviado al número +53 5469 0878
+                Complete el formulario para finalizar su pedido
               </p>
-              {state.items.some(item => item.type === 'tv' && item.selectedSeasons) && (
-                <p className="text-xs text-green-600 text-center mt-2">
-                  * Las temporadas seleccionadas y precios se incluirán en el mensaje
-                </p>
-              )}
             </div>
           </div>
         </div>
+        
+        {/* Checkout Modal */}
+        <CheckoutModal
+          isOpen={showCheckoutModal}
+          onClose={() => setShowCheckoutModal(false)}
+          onConfirm={handleCheckoutConfirm}
+        />
       </div>
     </div>
   );
