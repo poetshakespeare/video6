@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, MapPin, CreditCard, DollarSign, FileText, User, IdCard, Phone, Home } from 'lucide-react';
+import { X, MapPin, CreditCard, DollarSign, FileText, User, Car as IdCard, Phone, Home } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 
 interface CheckoutModalProps {
