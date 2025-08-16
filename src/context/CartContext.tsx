@@ -95,14 +95,49 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     isVisible: boolean;
   }>({ message: '', type: 'success', isVisible: false });
 
+  // Limpiar carrito al cargar la página (detectar refresh)
   useEffect(() => {
-    const savedCart = localStorage.getItem('movieCart');
-    if (savedCart) {
-      try {
-        const items = JSON.parse(savedCart);
-        dispatch({ type: 'LOAD_CART', payload: items });
-      } catch (error) {
-        console.error('Error loading cart from localStorage:', error);
+    const handleBeforeUnload = () => {
+      // Marcar que la página se está recargando
+      sessionStorage.setItem('pageRefreshed', 'true');
+    };
+
+    const handleLoad = () => {
+      // Si se detecta que la página fue recargada, limpiar el carrito
+      if (sessionStorage.getItem('pageRefreshed') === 'true') {
+        localStorage.removeItem('movieCart');
+        dispatch({ type: 'CLEAR_CART' });
+        sessionStorage.removeItem('pageRefreshed');
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('load', handleLoad);
+
+    // Verificar al montar el componente
+    if (sessionStorage.getItem('pageRefreshed') === 'true') {
+      localStorage.removeItem('movieCart');
+      dispatch({ type: 'CLEAR_CART' });
+      sessionStorage.removeItem('pageRefreshed');
+    }
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('load', handleLoad);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Solo cargar el carrito si no se detectó un refresh
+    if (sessionStorage.getItem('pageRefreshed') !== 'true') {
+      const savedCart = localStorage.getItem('movieCart');
+      if (savedCart) {
+        try {
+          const items = JSON.parse(savedCart);
+          dispatch({ type: 'LOAD_CART', payload: items });
+        } catch (error) {
+          console.error('Error loading cart from localStorage:', error);
+        }
       }
     }
   }, []);
@@ -113,7 +148,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addItem = (item: SeriesCartItem) => {
     const price = calculateItemPrice(item);
-    const itemWithDefaults = { ...item, paymentType: 'cash' as const };
+    const itemWithDefaults = { 
+      ...item, 
+      paymentType: 'cash' as const,
+      selectedSeasons: item.type === 'tv' && !item.selectedSeasons ? [1] : item.selectedSeasons
+    };
     dispatch({ type: 'ADD_ITEM', payload: itemWithDefaults });
     
     // Mostrar notificación

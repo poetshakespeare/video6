@@ -4,16 +4,18 @@ import { ArrowLeft, Star, Calendar, Clock, Plus, X, Play } from 'lucide-react';
 import { tmdbService } from '../services/tmdb';
 import { VideoPlayer } from '../components/VideoPlayer';
 import { PriceCard } from '../components/PriceCard';
+import { CastSection } from '../components/CastSection';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { useCart } from '../context/CartContext';
 import { IMAGE_BASE_URL, BACKDROP_SIZE } from '../config/api';
-import type { MovieDetails, Video, CartItem } from '../types/movie';
+import type { MovieDetails, Video, CartItem, CastMember } from '../types/movie';
 
 export function MovieDetail() {
   const { id } = useParams<{ id: string }>();
   const [movie, setMovie] = useState<MovieDetails | null>(null);
   const [videos, setVideos] = useState<Video[]>([]);
+  const [cast, setCast] = useState<CastMember[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [showVideo, setShowVideo] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -26,16 +28,19 @@ export function MovieDetail() {
   // Detectar si es anime
   const isAnime = movie?.original_language === 'ja' || 
                  (movie?.genres && movie.genres.some(g => g.name.toLowerCase().includes('animat')));
+
   useEffect(() => {
     const fetchMovieData = async () => {
       try {
         setLoading(true);
-        const [movieData, videoData] = await Promise.all([
+        const [movieData, videoData, creditsData] = await Promise.all([
           tmdbService.getMovieDetails(movieId),
-          tmdbService.getMovieVideos(movieId)
+          tmdbService.getMovieVideos(movieId),
+          tmdbService.getMovieCredits(movieId)
         ]);
 
         setMovie(movieData);
+        setCast(creditsData.cast || []);
         
         // Filter for trailers and teasers
         const trailers = videoData.results.filter(
@@ -69,6 +74,8 @@ export function MovieDetail() {
       type: 'movie',
       release_date: movie.release_date,
       vote_average: movie.vote_average,
+      original_language: movie.original_language,
+      genre_ids: movie.genres.map(g => g.id),
     };
 
     if (inCart) {
@@ -180,6 +187,9 @@ export function MovieDetail() {
                 </div>
               )}
             </div>
+
+            {/* Cast Section */}
+            <CastSection cast={cast} title="Reparto Principal" />
 
             {/* Videos */}
             {videos.length > 0 && (
@@ -335,6 +345,18 @@ export function MovieDetail() {
                   </p>
                 </div>
 
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-pink-200 transition-colors">
+                  <div className="flex items-center mb-2">
+                    <div className="bg-pink-100 p-2 rounded-lg mr-3 shadow-sm animate-pulse">
+                      <span className="text-sm">🗳️</span>
+                    </div>
+                    <h3 className="font-semibold text-gray-900">Votos</h3>
+                  </div>
+                  <p className="text-gray-700 font-medium ml-11">
+                    {movie.vote_count.toLocaleString()} votos
+                  </p>
+                </div>
+
                 {movie.production_companies.length > 0 && (
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-indigo-200 transition-colors">
                     <div className="flex items-center mb-3">
@@ -348,6 +370,26 @@ export function MovieDetail() {
                         <div key={company.id} className="bg-white rounded-lg p-2 border border-gray-200">
                           <p className="text-gray-700 text-sm font-medium">
                           {company.name}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {movie.production_countries.length > 0 && (
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-orange-200 transition-colors">
+                    <div className="flex items-center mb-3">
+                      <div className="bg-orange-100 p-2 rounded-lg mr-3 shadow-sm animate-bounce">
+                        <span className="text-sm">🌍</span>
+                      </div>
+                      <h3 className="font-semibold text-gray-900">Países</h3>
+                    </div>
+                    <div className="space-y-2 ml-11">
+                      {movie.production_countries.map((country) => (
+                        <div key={country.iso_3166_1} className="bg-white rounded-lg p-2 border border-gray-200">
+                          <p className="text-gray-700 text-sm font-medium">
+                            {country.name}
                           </p>
                         </div>
                       ))}

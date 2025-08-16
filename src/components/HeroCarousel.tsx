@@ -131,6 +131,22 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
     return () => clearTimeout(timer);
   }, [currentIndex]);
 
+  // Auto-refresh carousel content daily
+  useEffect(() => {
+    const refreshCarousel = async () => {
+      try {
+        const freshContent = await tmdbService.getHeroContent();
+        // This would need to be passed back to parent component
+        // For now, we'll rely on the parent's refresh mechanism
+      } catch (error) {
+        console.error('Error refreshing carousel content:', error);
+      }
+    };
+
+    const dailyRefresh = setInterval(refreshCarousel, 24 * 60 * 60 * 1000); // 24 hours
+    return () => clearInterval(dailyRefresh);
+  }, []);
+
   if (items.length === 0) return null;
 
   const currentItem = items[currentIndex];

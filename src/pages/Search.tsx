@@ -65,9 +65,7 @@ export function SearchPage() {
           ]);
           
           const allResults = [...multiResponse.results, ...animeMultiResponse.results];
-          const uniqueAllResults = allResults.filter((item, index, self) => 
-            index === self.findIndex(t => t.id === item.id)
-          );
+          const uniqueAllResults = tmdbService.removeDuplicates(allResults);
           
           response = {
             ...multiResponse,
@@ -76,10 +74,13 @@ export function SearchPage() {
           };
       }
 
+      // Ensure no duplicates in final results
+      const finalResults = tmdbService.removeDuplicates(response.results);
+
       if (append) {
-        setResults(prev => [...prev, ...response.results]);
+        setResults(prev => tmdbService.removeDuplicates([...prev, ...finalResults]));
       } else {
-        setResults(response.results);
+        setResults(finalResults);
         setTotalResults(response.total_results);
       }
       

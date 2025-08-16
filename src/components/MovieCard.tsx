@@ -36,6 +36,7 @@ export function MovieCard({ item, type }: MovieCardProps) {
       release_date: 'release_date' in item ? item.release_date : undefined,
       first_air_date: 'first_air_date' in item ? item.first_air_date : undefined,
       vote_average: item.vote_average,
+      selectedSeasons: type === 'tv' ? [1] : undefined,
     };
 
     if (inCart) {

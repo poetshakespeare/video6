@@ -34,10 +34,13 @@ export function Anime() {
           response = await tmdbService.getPopularAnime(pageNum);
       }
 
+      // Remove duplicates to ensure fresh content
+      const uniqueResults = tmdbService.removeDuplicates(response.results);
+
       if (append) {
-        setAnimeList(prev => [...prev, ...response.results]);
+        setAnimeList(prev => tmdbService.removeDuplicates([...prev, ...uniqueResults]));
       } else {
-        setAnimeList(response.results);
+        setAnimeList(uniqueResults);
       }
       
       setHasMore(pageNum < response.total_pages);
@@ -52,6 +55,13 @@ export function Anime() {
   useEffect(() => {
     setPage(1);
     fetchAnime(category, 1, false);
+    
+    // Auto-refresh content daily
+    const dailyRefresh = setInterval(() => {
+      fetchAnime(category, 1, false);
+    }, 24 * 60 * 60 * 1000); // 24 hours
+    
+    return () => clearInterval(dailyRefresh);
   }, [category]);
 
   const handleCategoryChange = (newCategory: AnimeCategory) => {
