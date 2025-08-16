@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Download, MessageCircle, Phone, BookOpen, Info, Check, DollarSign, CreditCard, Calculator } from 'lucide-react';
+import { useAdmin } from '../context/AdminContext';
 
 interface Novela {
   id: number;
@@ -17,64 +18,21 @@ interface NovelasModalProps {
 }
 
 export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
+  const { state: adminState } = useAdmin();
   const [selectedNovelas, setSelectedNovelas] = useState<number[]>([]);
   const [novelasWithPayment, setNovelasWithPayment] = useState<Novela[]>([]);
   const [showContactOptions, setShowContactOptions] = useState(false);
   const [showNovelList, setShowNovelList] = useState(false);
 
-  // Lista de novelas basada en el documento
-  const novelas: Novela[] = [
-    { id: 1, titulo: "Corazón Salvaje", genero: "Drama/Romance", capitulos: 185, año: 2009 },
-    { id: 2, titulo: "La Usurpadora", genero: "Drama/Melodrama", capitulos: 98, año: 1998 },
-    { id: 3, titulo: "María la del Barrio", genero: "Drama/Romance", capitulos: 73, año: 1995 },
-    { id: 4, titulo: "Marimar", genero: "Drama/Romance", capitulos: 63, año: 1994 },
-    { id: 5, titulo: "Rosalinda", genero: "Drama/Romance", capitulos: 80, año: 1999 },
-    { id: 6, titulo: "La Madrastra", genero: "Drama/Suspenso", capitulos: 135, año: 2005 },
-    { id: 7, titulo: "Rubí", genero: "Drama/Melodrama", capitulos: 115, año: 2004 },
-    { id: 8, titulo: "Pasión de Gavilanes", genero: "Drama/Romance", capitulos: 188, año: 2003 },
-    { id: 9, titulo: "Yo Soy Betty, la Fea", genero: "Comedia/Romance", capitulos: 335, año: 1999 },
-    { id: 10, titulo: "El Cuerpo del Deseo", genero: "Drama/Fantasía", capitulos: 178, año: 2005 },
-    { id: 11, titulo: "La Reina del Sur", genero: "Drama/Acción", capitulos: 63, año: 2011 },
-    { id: 12, titulo: "Sin Senos Sí Hay Paraíso", genero: "Drama/Acción", capitulos: 91, año: 2016 },
-    { id: 13, titulo: "El Señor de los Cielos", genero: "Drama/Acción", capitulos: 81, año: 2013 },
-    { id: 14, titulo: "La Casa de las Flores", genero: "Comedia/Drama", capitulos: 33, año: 2018 },
-    { id: 15, titulo: "Rebelde", genero: "Drama/Musical", capitulos: 440, año: 2004 },
-    { id: 16, titulo: "Amigas y Rivales", genero: "Drama/Romance", capitulos: 185, año: 2001 },
-    { id: 17, titulo: "Clase 406", genero: "Drama/Juvenil", capitulos: 344, año: 2002 },
-    { id: 18, titulo: "Destilando Amor", genero: "Drama/Romance", capitulos: 171, año: 2007 },
-    { id: 19, titulo: "Fuego en la Sangre", genero: "Drama/Romance", capitulos: 233, año: 2008 },
-    { id: 20, titulo: "Teresa", genero: "Drama/Melodrama", capitulos: 152, año: 2010 },
-    { id: 21, titulo: "Triunfo del Amor", genero: "Drama/Romance", capitulos: 176, año: 2010 },
-    { id: 22, titulo: "Una Familia con Suerte", genero: "Comedia/Drama", capitulos: 357, año: 2011 },
-    { id: 23, titulo: "Amores Verdaderos", genero: "Drama/Romance", capitulos: 181, año: 2012 },
-    { id: 24, titulo: "De Que Te Quiero, Te Quiero", genero: "Comedia/Romance", capitulos: 181, año: 2013 },
-    { id: 25, titulo: "Lo Que la Vida Me Robó", genero: "Drama/Romance", capitulos: 221, año: 2013 },
-    { id: 26, titulo: "La Gata", genero: "Drama/Romance", capitulos: 135, año: 2014 },
-    { id: 27, titulo: "Hasta el Fin del Mundo", genero: "Drama/Romance", capitulos: 177, año: 2014 },
-    { id: 28, titulo: "Yo No Creo en los Hombres", genero: "Drama/Romance", capitulos: 142, año: 2014 },
-    { id: 29, titulo: "La Malquerida", genero: "Drama/Romance", capitulos: 121, año: 2014 },
-    { id: 30, titulo: "Antes Muerta que Lichita", genero: "Comedia/Romance", capitulos: 183, año: 2015 },
-    { id: 31, titulo: "A Que No Me Dejas", genero: "Drama/Romance", capitulos: 153, año: 2015 },
-    { id: 32, titulo: "Simplemente María", genero: "Drama/Romance", capitulos: 155, año: 2015 },
-    { id: 33, titulo: "Tres Veces Ana", genero: "Drama/Romance", capitulos: 123, año: 2016 },
-    { id: 34, titulo: "La Candidata", genero: "Drama/Político", capitulos: 60, año: 2016 },
-    { id: 35, titulo: "Vino el Amor", genero: "Drama/Romance", capitulos: 143, año: 2016 },
-    { id: 36, titulo: "La Doble Vida de Estela Carrillo", genero: "Drama/Musical", capitulos: 95, año: 2017 },
-    { id: 37, titulo: "Mi Marido Tiene Familia", genero: "Comedia/Drama", capitulos: 175, año: 2017 },
-    { id: 38, titulo: "La Piloto", genero: "Drama/Acción", capitulos: 80, año: 2017 },
-    { id: 39, titulo: "Caer en Tentación", genero: "Drama/Suspenso", capitulos: 92, año: 2017 },
-    { id: 40, titulo: "Por Amar Sin Ley", genero: "Drama/Romance", capitulos: 123, año: 2018 },
-    { id: 41, titulo: "Amar a Muerte", genero: "Drama/Fantasía", capitulos: 190, año: 2018 },
-    { id: 42, titulo: "Ringo", genero: "Drama/Musical", capitulos: 90, año: 2019 },
-    { id: 43, titulo: "La Usurpadora (2019)", genero: "Drama/Melodrama", capitulos: 25, año: 2019 },
-    { id: 44, titulo: "100 Días para Enamorarnos", genero: "Comedia/Romance", capitulos: 104, año: 2020 },
-    { id: 45, titulo: "Te Doy la Vida", genero: "Drama/Romance", capitulos: 91, año: 2020 },
-    { id: 46, titulo: "Como Tú No Hay 2", genero: "Comedia/Romance", capitulos: 120, año: 2020 },
-    { id: 47, titulo: "La Desalmada", genero: "Drama/Romance", capitulos: 96, año: 2021 },
-    { id: 48, titulo: "Si Nos Dejan", genero: "Drama/Romance", capitulos: 93, año: 2021 },
-    { id: 49, titulo: "Vencer el Pasado", genero: "Drama/Familia", capitulos: 91, año: 2021 },
-    { id: 50, titulo: "La Herencia", genero: "Drama/Romance", capitulos: 74, año: 2022 }
-  ];
+  // Get novelas from admin config
+  const novelas: Novela[] = adminState.config.novelas.map(novela => ({
+    id: novela.id,
+    titulo: novela.titulo,
+    genero: novela.genero,
+    capitulos: novela.capitulos,
+    año: novela.año,
+    descripcion: novela.descripcion
+  }));
 
   const phoneNumber = '+5354690878';
 
@@ -122,9 +80,22 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
     const cashNovelas = selectedNovelasData.filter(n => n.paymentType === 'cash');
     const transferNovelas = selectedNovelasData.filter(n => n.paymentType === 'transfer');
     
-    const cashTotal = cashNovelas.reduce((sum, n) => sum + (n.capitulos * 5), 0);
-    const transferBaseTotal = transferNovelas.reduce((sum, n) => sum + (n.capitulos * 5), 0);
-    const transferFee = Math.round(transferBaseTotal * 0.1);
+    const cashTotal = cashNovelas.reduce((sum, n) => {
+      const novelaConfig = adminState.config.novelas.find(config => config.id === n.id);
+      return sum + (novelaConfig?.costoEfectivo || n.capitulos * 5);
+    }, 0);
+    
+    const transferTotal = transferNovelas.reduce((sum, n) => {
+      const novelaConfig = adminState.config.novelas.find(config => config.id === n.id);
+      return sum + (novelaConfig?.costoTransferencia || Math.round((n.capitulos * 5) * 1.1));
+    }, 0);
+    
+    const transferBaseTotal = transferNovelas.reduce((sum, n) => {
+      const novelaConfig = adminState.config.novelas.find(config => config.id === n.id);
+      return sum + (novelaConfig?.costoEfectivo || n.capitulos * 5);
+    }, 0);
+    
+    const transferFee = transferTotal - transferBaseTotal;
     const transferTotal = transferBaseTotal + transferFee;
     
     const grandTotal = cashTotal + transferTotal;
@@ -146,7 +117,7 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
   const generateNovelListText = () => {
     let listText = "📚 CATÁLOGO DE NOVELAS DISPONIBLES\n";
     listText += "TV a la Carta - Novelas Completas\n\n";
-    listText += "💰 Precio: $5 CUP por capítulo\n";
+    listText += "💰 Precios variables según novela\n";
     listText += "📱 Contacto: +5354690878\n\n";
     listText += "═══════════════════════════════════\n\n";
     
@@ -155,7 +126,8 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
     listText += "═══════════════════════════════════\n\n";
     
     novelas.forEach((novela, index) => {
-      const baseCost = novela.capitulos * 5;
+      const novelaConfig = adminState.config.novelas.find(config => config.id === novela.id);
+      const baseCost = novelaConfig?.costoEfectivo || novela.capitulos * 5;
       listText += `${index + 1}. ${novela.titulo}\n`;
       listText += `   📺 Género: ${novela.genero}\n`;
       listText += `   📊 Capítulos: ${novela.capitulos}\n`;
@@ -167,8 +139,9 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
     listText += "═══════════════════════════════════\n\n";
     
     novelas.forEach((novela, index) => {
-      const baseCost = novela.capitulos * 5;
-      const transferCost = Math.round(baseCost * 1.1);
+      const novelaConfig = adminState.config.novelas.find(config => config.id === novela.id);
+      const baseCost = novelaConfig?.costoEfectivo || novela.capitulos * 5;
+      const transferCost = novelaConfig?.costoTransferencia || Math.round(baseCost * 1.1);
       const recargo = transferCost - baseCost;
       listText += `${index + 1}. ${novela.titulo}\n`;
       listText += `   📺 Género: ${novela.genero}\n`;
@@ -183,8 +156,14 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
     listText += "═══════════════════════════════════\n\n";
     
     const totalCapitulos = novelas.reduce((sum, novela) => sum + novela.capitulos, 0);
-    const totalEfectivo = novelas.reduce((sum, novela) => sum + (novela.capitulos * 5), 0);
-    const totalTransferencia = novelas.reduce((sum, novela) => sum + Math.round((novela.capitulos * 5) * 1.1), 0);
+    const totalEfectivo = novelas.reduce((sum, novela) => {
+      const novelaConfig = adminState.config.novelas.find(config => config.id === novela.id);
+      return sum + (novelaConfig?.costoEfectivo || novela.capitulos * 5);
+    }, 0);
+    const totalTransferencia = novelas.reduce((sum, novela) => {
+      const novelaConfig = adminState.config.novelas.find(config => config.id === novela.id);
+      return sum + (novelaConfig?.costoTransferencia || Math.round((novela.capitulos * 5) * 1.1));
+    }, 0);
     const totalRecargo = totalTransferencia - totalEfectivo;
     
     listText += `📊 Total de novelas: ${novelas.length}\n`;
@@ -237,11 +216,13 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
       message += "💵 PAGO EN EFECTIVO:\n";
       message += "═══════════════════════════════════\n";
       cashNovelas.forEach((novela, index) => {
+        const novelaConfig = adminState.config.novelas.find(config => config.id === novela.id);
+        const costo = novelaConfig?.costoEfectivo || novela.capitulos * 5;
         message += `${index + 1}. ${novela.titulo}\n`;
         message += `   📺 Género: ${novela.genero}\n`;
         message += `   📊 Capítulos: ${novela.capitulos}\n`;
         message += `   📅 Año: ${novela.año}\n`;
-        message += `   💰 Costo: $${(novela.capitulos * 5).toLocaleString()} CUP\n\n`;
+        message += `   💰 Costo: $${costo.toLocaleString()} CUP\n\n`;
       });
       message += `💰 Subtotal Efectivo: $${cashTotal.toLocaleString()} CUP\n`;
       message += `📊 Total capítulos: ${cashNovelas.reduce((sum, n) => sum + n.capitulos, 0)}\n\n`;
@@ -252,9 +233,10 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
       message += "🏦 PAGO POR TRANSFERENCIA BANCARIA (+10%):\n";
       message += "═══════════════════════════════════\n";
       transferNovelas.forEach((novela, index) => {
-        const baseCost = novela.capitulos * 5;
-        const fee = Math.round(baseCost * 0.1);
-        const totalCost = baseCost + fee;
+        const novelaConfig = adminState.config.novelas.find(config => config.id === novela.id);
+        const baseCost = novelaConfig?.costoEfectivo || novela.capitulos * 5;
+        const totalCost = novelaConfig?.costoTransferencia || Math.round(baseCost * 1.1);
+        const fee = totalCost - baseCost;
         message += `${index + 1}. ${novela.titulo}\n`;
         message += `   📺 Género: ${novela.genero}\n`;
         message += `   📊 Capítulos: ${novela.capitulos}\n`;
@@ -344,7 +326,7 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
                 </div>
                 <div className="flex items-center">
                   <span className="text-2xl mr-3">💰</span>
-                  <p className="font-semibold">Costo: $5 CUP por cada capítulo</p>
+                  <p className="font-semibold">Precios variables según novela</p>
                 </div>
                 <div className="flex items-center">
                   <span className="text-2xl mr-3">💳</span>
@@ -479,8 +461,9 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
                   <div className="grid grid-cols-1 gap-3">
                     {novelasWithPayment.map((novela) => {
                       const isSelected = selectedNovelas.includes(novela.id);
-                      const baseCost = novela.capitulos * 5;
-                      const transferCost = Math.round(baseCost * 1.1);
+                      const novelaConfig = adminState.config.novelas.find(config => config.id === novela.id);
+                      const baseCost = novelaConfig?.costoEfectivo || novela.capitulos * 5;
+                      const transferCost = novelaConfig?.costoTransferencia || Math.round(baseCost * 1.1);
                       const finalCost = novela.paymentType === 'transfer' ? transferCost : baseCost;
                       
                       return (
@@ -560,7 +543,7 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
                                     </div>
                                   )}
                                   <div className="text-xs text-gray-500 mt-1">
-                                    $5 CUP × {novela.capitulos} cap.
+                                    ${Math.round(baseCost / novela.capitulos)} CUP × {novela.capitulos} cap.
                                   </div>
                                 </div>
                               </div>

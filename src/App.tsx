@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
+import { AdminProvider } from './context/AdminContext';
 import { Header } from './components/Header';
 import { Home } from './pages/Home';
 import { Movies } from './pages/Movies';
@@ -98,25 +99,27 @@ function App() {
   }, []);
 
   return (
-    <CartProvider>
-      <Router>
-        <div className="min-h-screen bg-gray-50">
-          <Header />
-          <main>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/movies" element={<Movies />} />
-              <Route path="/tv" element={<TVShows />} />
-              <Route path="/anime" element={<Anime />} />
-              <Route path="/search" element={<SearchPage />} />
-              <Route path="/movie/:id" element={<MovieDetail />} />
-              <Route path="/tv/:id" element={<TVDetail />} />
-              <Route path="/cart" element={<Cart />} />
-            </Routes>
-          </main>
-        </div>
-      </Router>
-    </CartProvider>
+    <AdminProvider>
+      <CartProvider>
+        <Router>
+          <div className="min-h-screen bg-gray-50">
+            <Header />
+            <main>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/movies" element={<Movies />} />
+                <Route path="/tv" element={<TVShows />} />
+                <Route path="/anime" element={<Anime />} />
+                <Route path="/search" element={<SearchPage />} />
+                <Route path="/movie/:id" element={<MovieDetail />} />
+                <Route path="/tv/:id" element={<TVDetail />} />
+                <Route path="/cart" element={<Cart />} />
+              </Routes>
+            </main>
+          </div>
+        </Router>
+      </CartProvider>
+    </AdminProvider>
   );
 }
 

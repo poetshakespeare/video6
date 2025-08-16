@@ -10,20 +10,29 @@ interface PriceCardProps {
 
 export function PriceCard({ type, selectedSeasons = [], episodeCount = 0, isAnime = false }: PriceCardProps) {
   const calculatePrice = () => {
+    // Get admin config for dynamic pricing
+    const adminConfig = JSON.parse(localStorage.getItem('adminConfig') || '{}');
+    const moviePrice = adminConfig.pricing?.moviePrice || 80;
+    const seriesPrice = adminConfig.pricing?.seriesPrice || 300;
+    
     if (type === 'movie') {
-      return 80; // Películas: $80 CUP
+      return moviePrice; // Use dynamic pricing
     } else {
-      // Series: $300 CUP por temporada
+      // Series: Use dynamic pricing per season
       if (isAnime) {
-        return selectedSeasons.length * 300; // Anime por temporada
+        return selectedSeasons.length * seriesPrice; // Anime por temporada
       } else {
-        return selectedSeasons.length * 300;
+        return selectedSeasons.length * seriesPrice;
       }
     }
   };
 
+  // Get transfer fee percentage from admin config
+  const adminConfig = JSON.parse(localStorage.getItem('adminConfig') || '{}');
+  const transferFeePercentage = adminConfig.pricing?.transferFeePercentage || 10;
+  
   const price = calculatePrice();
-  const transferPrice = Math.round(price * 1.1); // Precio con recargo del 10%
+  const transferPrice = Math.round(price * (1 + transferFeePercentage / 100)); // Precio con recargo dinámico
   
   const getIcon = () => {
     if (type === 'movie') {
@@ -87,7 +96,7 @@ export function PriceCard({ type, selectedSeasons = [], episodeCount = 0, isAnim
             </span>
           </div>
           <div className="text-xs text-orange-600">
-            +10% recargo bancario
+            +{transferFeePercentage}% recargo bancario
           </div>
         </div>
         
