@@ -132,6 +132,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Listen for real-time price updates
+  useEffect(() => {
+    const handleAdminUpdate = (event: CustomEvent) => {
+      if (event.detail.prices) {
+        // Prices updated, components will re-render automatically
+        console.log('Prices updated in real-time:', event.detail.prices);
+      }
+    };
+
+    window.addEventListener('admin_config_updated', handleAdminUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('admin_config_updated', handleAdminUpdate as EventListener);
+    };
+  }, []);
+
   useEffect(() => {
     if (sessionStorage.getItem('pageRefreshed') !== 'true') {
       const savedCart = localStorage.getItem('movieCart');

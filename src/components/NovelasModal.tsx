@@ -36,6 +36,7 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
   const [selectedYear, setSelectedYear] = useState('');
   const [sortBy, setSortBy] = useState<'titulo' | 'año' | 'capitulos'>('titulo');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [liveNovels, setLiveNovels] = useState<Novela[]>([]);
 
   // Get novels and prices from embedded configuration
   const adminNovels = EMBEDDED_NOVELS;
@@ -45,8 +46,44 @@ export function NovelasModal({ isOpen, onClose }: NovelasModalProps) {
   // Base novels list
   const defaultNovelas: Novela[] = [];
 
-  // Combine admin novels with default novels
+  // Get live novels from admin context
+  useEffect(() => {
+    // Load initial novels from localStorage
+    try {
+      const adminState = localStorage.getItem('admin_system_state');
+      if (adminState) {
+        const state = JSON.parse(adminState);
+        if (state.novels && state.novels.length > 0) {
+          setLiveNovels(state.novels);
+        }
+      }
+    } catch (error) {
+      console.warn('Error loading live novels:', error);
+    }
+
+    // Listen for real-time updates
+    const handleAdminUpdate = (event: CustomEvent) => {
+      if (event.detail.novels) {
+        setLiveNovels(event.detail.novels);
+      }
+    };
+
+    window.addEventListener('admin_config_updated', handleAdminUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('admin_config_updated', handleAdminUpdate as EventListener);
+    };
+  }, []);
+
+  // Combine all novels sources
   const allNovelas = [...defaultNovelas, ...adminNovels.map(novel => ({
+    id: novel.id,
+    titulo: novel.titulo,
+    genero: novel.genero,
+    capitulos: novel.capitulos,
+    año: novel.año,
+    descripcion: novel.descripcion
+  })), ...liveNovels.map(novel => ({
     id: novel.id,
     titulo: novel.titulo,
     genero: novel.genero,

@@ -488,16 +488,16 @@ export function Cart() {
             {/* WhatsApp Button */}
             <button
               onClick={() => setShowCheckoutModal(true)}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center transform hover:scale-105 hover:shadow-lg touch-manipulation"
+              className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center transform hover:scale-105 hover:shadow-lg touch-manipulation"
             >
               <MessageCircle className="mr-3 h-6 w-6" />
-              Proceder al Checkout
+              Finalizar Compra
             </button>
             
             <div className="mt-4 p-4 bg-green-50 rounded-xl border border-green-100">
               <p className="text-sm text-green-700 text-center flex items-center justify-center">
                 <span className="mr-2">📱</span>
-                Complete sus datos para finalizar el pedido
+                Complete sus datos para enviar el pedido por WhatsApp
               </p>
             </div>
           </div>

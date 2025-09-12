@@ -11,7 +11,8 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
     transferFee, 
     total,
     cashTotal = 0,
-    transferTotal = 0
+    transferTotal = 0,
+    isPickup = false
   } = orderData;
 
   // Obtener el porcentaje de transferencia actual del contexto admin
@@ -74,9 +75,34 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
   message += `👤 *DATOS DEL CLIENTE:*\n`;
   message += `• Nombre: ${customerInfo.fullName}\n`;
   message += `• Teléfono: ${customerInfo.phone}\n`;
-  message += `• Dirección: ${customerInfo.address}\n\n`;
+  if (!isPickup) {
+    message += `• Dirección: ${customerInfo.address}\n`;
+  }
+  message += `\n`;
   
   message += `🎯 *PRODUCTOS SOLICITADOS:*\n${itemsList}\n\n`;
+  
+  // Desglose detallado por método de pago
+  message += `💳 *DESGLOSE POR MÉTODO DE PAGO:*\n`;
+  
+  items.forEach(item => {
+    const basePrice = item.type === 'movie' ? currentPrices.moviePrice : (item.selectedSeasons?.length || 1) * currentPrices.seriesPrice;
+    const finalPrice = item.paymentType === 'transfer' ? Math.round(basePrice * (1 + transferFeePercentage / 100)) : basePrice;
+    const emoji = item.type === 'movie' ? '🎬' : '📺';
+    const paymentIcon = item.paymentType === 'transfer' ? '🏦' : '💵';
+    const paymentText = item.paymentType === 'transfer' ? `Transferencia (+${transferFeePercentage}%)` : 'Efectivo';
+    
+    message += `${emoji} *${item.title}*\n`;
+    if (item.selectedSeasons && item.selectedSeasons.length > 0) {
+      message += `  📺 Temporadas: ${item.selectedSeasons.sort((a, b) => a - b).join(', ')}\n`;
+    }
+    message += `  ${paymentIcon} Método: ${paymentText}\n`;
+    if (item.paymentType === 'transfer') {
+      message += `  💰 Precio base: $${basePrice.toLocaleString()} CUP\n`;
+      message += `  💳 Recargo (${transferFeePercentage}%): +$${(finalPrice - basePrice).toLocaleString()} CUP\n`;
+    }
+    message += `  💰 Precio final: $${finalPrice.toLocaleString()} CUP\n\n`;
+  });
   
   message += `💰 *RESUMEN DE COSTOS:*\n`;
   
@@ -121,12 +147,26 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
     message += `• Recargo transferencia (${transferFeePercentage}%): +$${transferFee.toLocaleString()} CUP\n`;
   }
   
-  message += `🚚 Entrega (${deliveryZone.split(' > ')[2]}): +$${deliveryCost.toLocaleString()} CUP\n`;
+  if (isPickup) {
+    message += `🏠 Recogida en local: GRATIS\n`;
+  } else {
+    const zoneName = deliveryZone.includes(' > ') ? deliveryZone.split(' > ')[2] : deliveryZone;
+    message += `🚚 Entrega (${zoneName}): +$${deliveryCost.toLocaleString()} CUP\n`;
+  }
   message += `\n🎯 *TOTAL FINAL: $${total.toLocaleString()} CUP*\n\n`;
   
-  message += `📍 *ZONA DE ENTREGA:*\n`;
-  message += `${deliveryZone.replace(' > ', ' → ')}\n`;
-  message += `💰 Costo de entrega: $${deliveryCost.toLocaleString()} CUP\n\n`;
+  if (isPickup) {
+    message += `📍 *RECOGIDA EN LOCAL:*\n`;
+    message += `🏠 TV a la Carta\n`;
+    message += `📍 Reparto Nuevo Vista Alegre, Santiago de Cuba\n`;
+    message += `🗺️ Coordenadas: 20.039585, -75.849663\n`;
+    message += `🌐 Google Maps: https://www.google.com/maps/place/20%C2%B002'22.5%22N+75%C2%B050'58.8%22W/@20.0394604,-75.8495414,180m/data=!3m1!1e3!4m4!3m3!8m2!3d20.039585!4d-75.849663\n`;
+    message += `💰 Costo de recogida: GRATIS\n\n`;
+  } else {
+    message += `📍 *ZONA DE ENTREGA:*\n`;
+    message += `${deliveryZone.replace(' > ', ' → ')}\n`;
+    message += `💰 Costo de entrega: $${deliveryCost.toLocaleString()} CUP\n\n`;
+  }
   
   message += `📊 *ESTADÍSTICAS DEL PEDIDO:*\n`;
   message += `• Total de elementos: ${items.length}\n`;
@@ -154,6 +194,14 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
     minute: '2-digit',
     second: '2-digit'
   })}\n`;
+  
+  if (isPickup) {
+    message += `\n📋 *INSTRUCCIONES PARA RECOGIDA:*\n`;
+    message += `• Contactar al llegar al local\n`;
+    message += `• Presentar este pedido (ID: ${orderId})\n`;
+    message += `• Horario de atención: Consultar disponibilidad\n`;
+  }
+  
   message += `🌟 *¡Gracias por elegir TV a la Carta!*`;
   
   const encodedMessage = encodeURIComponent(message);

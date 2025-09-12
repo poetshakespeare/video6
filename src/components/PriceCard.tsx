@@ -22,6 +22,22 @@ export function PriceCard({ type, selectedSeasons = [], episodeCount = 0, isAnim
   const seriesPrice = EMBEDDED_PRICES.seriesPrice;
   const transferFeePercentage = EMBEDDED_PRICES.transferFeePercentage;
   
+  // Listen for real-time price updates
+  React.useEffect(() => {
+    const handleAdminUpdate = (event: CustomEvent) => {
+      if (event.detail.prices) {
+        // Force re-render with new prices
+        window.location.reload();
+      }
+    };
+
+    window.addEventListener('admin_config_updated', handleAdminUpdate as EventListener);
+    
+    return () => {
+      window.removeEventListener('admin_config_updated', handleAdminUpdate as EventListener);
+    };
+  }, []);
+
   const calculatePrice = () => {
     if (type === 'movie') {
       return moviePrice;
