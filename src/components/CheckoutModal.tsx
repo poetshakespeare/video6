@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, MapPin, User, Phone, Home, CreditCard, DollarSign, MessageCircle, Calculator, Truck } from 'lucide-react';
+import { X, MapPin, User, Phone, Home, CreditCard, DollarSign, MessageCircle, Calculator, Truck, Navigation } from 'lucide-react';
 
 // ZONAS DE ENTREGA EMBEBIDAS - Generadas automáticamente
 const EMBEDDED_DELIVERY_ZONES = [];
@@ -29,6 +29,7 @@ export interface OrderData {
   total: number;
   cashTotal?: number;
   transferTotal?: number;
+  isPickup?: boolean;
 }
 
 interface CheckoutModalProps {
@@ -52,15 +53,30 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
   });
   const [selectedZone, setSelectedZone] = useState('');
   const [deliveryCost, setDeliveryCost] = useState(0);
+  const [isPickup, setIsPickup] = useState(false);
+  const [showLocation, setShowLocation] = useState(false);
   const [errors, setErrors] = useState<Partial<CustomerInfo>>({});
 
   // Use embedded delivery zones
   const deliveryZones = EMBEDDED_DELIVERY_ZONES;
 
+  // Opción de recogida en el local
+  const pickupOption = {
+    id: 'pickup',
+    name: 'Recogida en TV a la Carta (GRATIS)',
+    cost: 0,
+    address: 'Reparto Nuevo Vista Alegre, Santiago de Cuba',
+    coordinates: { lat: 20.039585, lng: -75.849663 }
+  };
+
   useEffect(() => {
-    if (selectedZone) {
+    if (selectedZone === 'pickup') {
+      setDeliveryCost(0);
+      setIsPickup(true);
+    } else if (selectedZone) {
       const zone = deliveryZones.find(z => z.name === selectedZone);
       setDeliveryCost(zone ? zone.cost : 0);
+      setIsPickup(false);
     }
   }, [selectedZone, deliveryZones]);
 
@@ -77,8 +93,8 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
       newErrors.phone = 'Formato de teléfono inválido';
     }
 
-    if (!customerInfo.address.trim()) {
-      newErrors.address = 'La dirección es requerida';
+    if (!isPickup && !customerInfo.address.trim()) {
+      newErrors.address = 'La dirección es requerida para entrega a domicilio';
     }
 
     setErrors(newErrors);
@@ -93,7 +109,7 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
     }
 
     if (!selectedZone) {
-      alert('Por favor selecciona una zona de entrega');
+      alert('Por favor selecciona una opción de entrega');
       return;
     }
 
@@ -101,12 +117,13 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
     const orderData: OrderData = {
       orderId,
       customerInfo,
-      deliveryZone: selectedZone,
+      deliveryZone: selectedZone === 'pickup' ? pickupOption.name : selectedZone,
       deliveryCost,
       items,
       subtotal: total,
       transferFee: 0,
-      total: total + deliveryCost
+      total: total + deliveryCost,
+      isPickup: isPickup
     };
 
     onCheckout(orderData);
@@ -119,21 +136,26 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
     }
   };
 
+  const openGoogleMaps = () => {
+    const url = `https://www.google.com/maps/place/20%C2%B002'22.5%22N+75%C2%B050'58.8%22W/@20.0394604,-75.8495414,180m/data=!3m1!1e3!4m4!3m3!8m2!3d20.039585!4d-75.849663?entry=ttu&g_ep=EgoyMDI1MDczMC4wIKXMDSoASAFQAw%3D%3D`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl">
+      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[95vh] overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 sm:p-6 text-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <div className="bg-white/20 p-3 rounded-xl mr-4">
+              <div className="bg-white/20 p-3 rounded-xl mr-4 shadow-lg">
                 <MessageCircle className="h-6 w-6" />
               </div>
               <div>
                 <h2 className="text-2xl font-bold">Finalizar Pedido</h2>
-                <p className="text-blue-100">Completa tus datos para proceder</p>
+                <p className="text-blue-100">Complete sus datos para proceder</p>
               </div>
             </div>
             <button
@@ -145,8 +167,8 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
           </div>
         </div>
 
-        <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <div className="overflow-y-auto max-h-[calc(95vh-120px)]">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-6">
             {/* Customer Information */}
             <div className="bg-gray-50 rounded-xl p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -191,36 +213,81 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Dirección Completa *
-                  </label>
-                  <textarea
-                    value={customerInfo.address}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
-                    rows={3}
-                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${
-                      errors.address ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="Calle, número, entre calles, referencias..."
-                  />
-                  {errors.address && (
-                    <p className="text-red-500 text-sm mt-1">{errors.address}</p>
-                  )}
-                </div>
+                {!isPickup && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Dirección Completa *
+                    </label>
+                    <textarea
+                      value={customerInfo.address}
+                      onChange={(e) => handleInputChange('address', e.target.value)}
+                      rows={3}
+                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${
+                        errors.address ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      placeholder="Calle, número, entre calles, referencias..."
+                    />
+                    {errors.address && (
+                      <p className="text-red-500 text-sm mt-1">{errors.address}</p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Delivery Zone */}
+            {/* Delivery Options */}
             <div className="bg-gray-50 rounded-xl p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <MapPin className="h-5 w-5 mr-2 text-green-600" />
-                Zona de Entrega
+                Opciones de Entrega
               </h3>
               
-              {deliveryZones.length > 0 ? (
-                <div className="space-y-3">
-                  {deliveryZones.map((zone) => (
+              <div className="space-y-3">
+                {/* Pickup Option */}
+                <label className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
+                  selectedZone === 'pickup'
+                    ? 'border-green-500 bg-green-50'
+                    : 'border-gray-300 hover:border-green-300'
+                }`}>
+                  <div className="flex items-center">
+                    <input
+                      type="radio"
+                      name="deliveryOption"
+                      value="pickup"
+                      checked={selectedZone === 'pickup'}
+                      onChange={(e) => setSelectedZone(e.target.value)}
+                      className="mr-3 h-4 w-4 text-green-600 focus:ring-green-500"
+                    />
+                    <div>
+                      <p className="font-medium text-gray-900 flex items-center">
+                        <Home className="h-4 w-4 mr-2 text-green-600" />
+                        {pickupOption.name}
+                      </p>
+                      <p className="text-sm text-gray-600">{pickupOption.address}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-green-600">GRATIS</p>
+                  </div>
+                </label>
+
+                {/* Show location button for pickup */}
+                {selectedZone === 'pickup' && (
+                  <div className="ml-7 mt-2">
+                    <button
+                      type="button"
+                      onClick={openGoogleMaps}
+                      className="flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium transition-colors"
+                    >
+                      <Navigation className="h-4 w-4 mr-1" />
+                      Ver ubicación en Google Maps
+                    </button>
+                  </div>
+                )}
+
+                {/* Delivery Zones */}
+                {deliveryZones.length > 0 ? (
+                  deliveryZones.map((zone) => (
                     <label
                       key={zone.id}
                       className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
@@ -232,37 +299,36 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
                       <div className="flex items-center">
                         <input
                           type="radio"
-                          name="deliveryZone"
+                          name="deliveryOption"
                           value={zone.name}
                           checked={selectedZone === zone.name}
                           onChange={(e) => setSelectedZone(e.target.value)}
                           className="mr-3 h-4 w-4 text-green-600 focus:ring-green-500"
                         />
                         <div>
-                          <p className="font-medium text-gray-900">{zone.name}</p>
+                          <p className="font-medium text-gray-900 flex items-center">
+                            <Truck className="h-4 w-4 mr-2 text-blue-600" />
+                            {zone.name}
+                          </p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-green-600">${zone.cost.toLocaleString()} CUP</p>
                       </div>
                     </label>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Truck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    No hay zonas de entrega configuradas
-                  </h3>
-                  <p className="text-gray-600">
-                    Contacta con el administrador para configurar las zonas de entrega.
-                  </p>
-                </div>
-              )}
+                  ))
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-gray-600">
+                      No hay zonas de entrega configuradas. Solo está disponible la recogida en el local.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Order Summary */}
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border-2 border-blue-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <Calculator className="h-5 w-5 mr-2 text-blue-600" />
                 Resumen del Pedido
@@ -276,8 +342,12 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
                 
                 {selectedZone && (
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Entrega</span>
-                    <span className="font-semibold">${deliveryCost.toLocaleString()} CUP</span>
+                    <span className="text-gray-600">
+                      {isPickup ? 'Recogida en local' : 'Entrega a domicilio'}
+                    </span>
+                    <span className="font-semibold">
+                      {isPickup ? 'GRATIS' : `$${deliveryCost.toLocaleString()} CUP`}
+                    </span>
                   </div>
                 )}
                 
@@ -295,7 +365,7 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={!selectedZone || deliveryZones.length === 0}
+              disabled={!selectedZone}
               className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center disabled:cursor-not-allowed"
             >
               <MessageCircle className="h-5 w-5 mr-2" />
