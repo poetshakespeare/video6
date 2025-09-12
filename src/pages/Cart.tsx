@@ -1,21 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Trash2, Star, Calendar, MessageCircle, ArrowLeft, Edit3, Tv, DollarSign, CreditCard, Calculator, Settings } from 'lucide-react';
+import { ShoppingCart, Trash2, Star, Calendar, MessageCircle, ArrowLeft, Edit3, Tv, DollarSign, CreditCard, Calculator, Sparkles, Zap, Heart, Check, X } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import { useAdmin } from '../context/AdminContext';
+import { AdminContext } from '../context/AdminContext';
 import { PriceCard } from '../components/PriceCard';
 import { CheckoutModal, OrderData, CustomerInfo } from '../components/CheckoutModal';
-import { AdminLogin } from '../components/AdminLogin';
-import { AdminPanel } from '../components/AdminPanel';
 import { sendOrderToWhatsApp } from '../utils/whatsapp';
 import { IMAGE_BASE_URL, POSTER_SIZE } from '../config/api';
 
 export function Cart() {
-  const { state: cartState, removeItem, clearCart, updatePaymentType, calculateItemPrice, calculateTotalPrice, calculateTotalByPaymentType } = useCart();
-  const { state: adminState } = useAdmin();
+  const { state, removeItem, clearCart, updatePaymentType, calculateItemPrice, calculateTotalPrice, calculateTotalByPaymentType } = useCart();
+  const adminContext = React.useContext(AdminContext);
   const [showCheckoutModal, setShowCheckoutModal] = React.useState(false);
-  const [showAdminLogin, setShowAdminLogin] = React.useState(false);
-  const [showAdminPanel, setShowAdminPanel] = React.useState(false);
 
   const handleCheckout = (orderData: OrderData) => {
     // Calculate totals
@@ -27,7 +23,7 @@ export function Cart() {
     // Complete the order data with cart information
     const completeOrderData: OrderData = {
       ...orderData,
-      items: cartState.items,
+      items: state.items,
       subtotal,
       transferFee,
       total,
@@ -37,11 +33,6 @@ export function Cart() {
     
     sendOrderToWhatsApp(completeOrderData);
     setShowCheckoutModal(false);
-  };
-
-  const handleAdminLoginSuccess = () => {
-    setShowAdminLogin(false);
-    setShowAdminPanel(true);
   };
 
   const getItemUrl = (item: any) => {
@@ -67,11 +58,11 @@ export function Cart() {
 
   const totalPrice = calculateTotalPrice();
   const totalsByPaymentType = calculateTotalByPaymentType();
-  const movieCount = cartState.items.filter(item => item.type === 'movie').length;
-  const seriesCount = cartState.items.filter(item => item.type === 'tv').length;
-  const animeCount = cartState.items.filter(item => isAnime(item)).length;
+  const movieCount = state.items.filter(item => item.type === 'movie').length;
+  const seriesCount = state.items.filter(item => item.type === 'tv').length;
+  const animeCount = state.items.filter(item => isAnime(item)).length;
 
-  if (cartState.items.length === 0) {
+  if (state.items.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="text-center max-w-md w-full">
@@ -99,30 +90,15 @@ export function Cart() {
             >
               Descubrir Anime
             </Link>
-            <button
-              onClick={() => setShowAdminLogin(true)}
-              className="w-full bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white px-6 py-3 rounded-lg font-medium transition-colors text-center flex items-center justify-center"
+            <Link
+              to="/admin"
+              className="w-full bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition-colors text-center flex items-center justify-center"
             >
-              <Settings className="h-5 w-5 mr-2" />
+              <span className="mr-2">⚙️</span>
               Panel de Control
-            </button>
+            </Link>
           </div>
         </div>
-        
-        {/* Admin Login Modal */}
-        <AdminLogin
-          isOpen={showAdminLogin}
-          onClose={() => setShowAdminLogin(false)}
-          onSuccess={handleAdminLoginSuccess}
-        />
-        
-        {/* Admin Panel */}
-        {adminState.isAuthenticated && (
-          <AdminPanel
-            isOpen={showAdminPanel}
-            onClose={() => setShowAdminPanel(false)}
-          />
-        )}
       </div>
     );
   }
@@ -134,7 +110,7 @@ export function Cart() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 space-y-4 sm:space-y-0">
           <div className="flex items-center justify-center sm:justify-start">
             <ShoppingCart className="mr-2 sm:mr-3 h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Mi Carrito ({cartState.total})</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Mi Carrito</h1>
           </div>
           <Link
             to="/"
@@ -150,7 +126,7 @@ export function Cart() {
           <div className="p-6 border-b border-gray-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between space-y-2 sm:space-y-0">
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900 text-center sm:text-left">
-                Elementos ({cartState.total})
+                Elementos ({state.total})
               </h2>
               <button
                 onClick={clearCart}
@@ -162,126 +138,148 @@ export function Cart() {
           </div>
 
           <div className="divide-y divide-gray-200">
-            {cartState.items.map((item) => (
-              <div key={`${item.type}-${item.id}`} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors">
+            {state.items.map((item) => (
+              <div key={`${item.type}-${item.id}`} className="p-6 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 border-l-4 border-transparent hover:border-blue-400">
                 <div className="flex flex-col sm:flex-row sm:items-start space-y-4 sm:space-y-0 sm:space-x-4">
                   {/* Poster */}
                   <Link to={getItemUrl(item)} className="flex-shrink-0 mx-auto sm:mx-0">
                     <img
                       src={getPosterUrl(item.poster_path)}
                       alt={item.title}
-                      className="w-20 h-28 sm:w-16 sm:h-24 object-cover rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                      className="w-24 h-36 sm:w-20 sm:h-28 object-cover rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-2 border-white"
                     />
                   </Link>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0 text-center sm:text-left">
-                    {/* Payment Type Selection */}
-                    <div className="mb-3 sm:mb-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-                        <span className="text-sm font-medium text-gray-700 text-center sm:text-left">Tipo de pago:</span>
-                        <div className="flex justify-center sm:justify-start space-x-2">
-                          <button
-                            onClick={() => updatePaymentType(item.id, 'cash')}
-                            className={`px-3 py-2 rounded-full text-xs font-medium transition-colors ${
-                              item.paymentType === 'cash'
-                                ? 'bg-green-500 text-white'
-                                : 'bg-gray-200 text-gray-600 hover:bg-green-100'
-                            }`}
-                          >
-                            <DollarSign className="h-3 w-3 inline mr-1" />
-                            Efectivo
-                          </button>
-                          <button
-                            onClick={() => updatePaymentType(item.id, 'transfer')}
-                            className={`px-3 py-2 rounded-full text-xs font-medium transition-colors ${
-                              item.paymentType === 'transfer'
-                                ? 'bg-orange-500 text-white'
-                                : 'bg-gray-200 text-gray-600 hover:bg-orange-100'
-                            }`}
-                          >
-                            <CreditCard className="h-3 w-3 inline mr-1" />
-                            Transferencia (+10%)
-                          </button>
-                        </div>
-                      </div>
-                    </div>
 
                     <Link
                       to={getItemUrl(item)}
-                      className="block hover:text-blue-600 transition-colors mb-2"
+                      className="block hover:text-blue-600 transition-colors mb-3"
                     >
-                      <h3 className="text-base sm:text-lg font-semibold text-gray-900 break-words">
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 break-words hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-600 transition-all duration-300">
                         {item.title}
                       </h3>
                     </Link>
                     
                     {item.type === 'tv' && item.selectedSeasons && item.selectedSeasons.length > 0 && (
-                      <div className="mb-2">
-                        <span className="inline-block bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-medium">
+                      <div className="mb-3">
+                        <span className="inline-block bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 px-4 py-2 rounded-full text-sm font-semibold border border-purple-200 shadow-sm">
+                          <Tv className="h-4 w-4 inline mr-2" />
                           Temporadas: {item.selectedSeasons.sort((a, b) => a - b).join(', ')}
                         </span>
                       </div>
                     )}
                     
-                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 mt-2 text-sm text-gray-600">
-                      <span className="bg-gray-100 px-2 py-1 rounded text-xs font-medium">
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-3 text-sm text-gray-600">
+                      <span className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 px-3 py-2 rounded-full text-xs font-semibold border border-blue-200 shadow-sm">
                         {item.type === 'movie' ? 'Película' : 'Serie'}
                       </span>
-                      {item.type === 'tv' && item.selectedSeasons && item.selectedSeasons.length > 0 && (
-                        <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-medium inline-flex items-center">
-                          <Tv className="h-3 w-3 mr-1" />
-                          {item.selectedSeasons.length} temp.
-                        </span>
-                      )}
-                      <div className="inline-flex items-center">
+                      <div className="inline-flex items-center bg-gray-50 px-3 py-2 rounded-full border border-gray-200">
                         <Calendar className="h-4 w-4 mr-1" />
                         <span>{getItemYear(item)}</span>
                       </div>
-                      <div className="inline-flex items-center">
+                      <div className="inline-flex items-center bg-yellow-50 px-3 py-2 rounded-full border border-yellow-200">
                         <Star className="h-4 w-4 mr-1 fill-yellow-400 text-yellow-400" />
                         <span>{item.vote_average ? item.vote_average.toFixed(1) : 'N/A'}</span>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex-shrink-0 w-full sm:w-auto sm:ml-4">
-                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-3 border-2 border-green-200 shadow-sm sm:min-w-[140px]">
-                      <div className="text-center">
-                        <div className="text-xs font-medium text-green-700 mb-1">
-                          {item.paymentType === 'cash' ? 'Efectivo' : 'Transferencia'}
+                    {/* Modern Payment Type Selection */}
+                    <div className="mt-4 p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-xl border border-gray-200">
+                      <div className="flex flex-col space-y-3">
+                        <div className="flex items-center justify-center sm:justify-start">
+                          <span className="text-sm font-bold text-gray-800 mr-3">💳 Método de Pago:</span>
                         </div>
-                        <div className="text-base sm:text-lg font-bold text-green-800">
-                          ${calculateItemPrice(item).toLocaleString()} CUP
+                        <div className="flex justify-center sm:justify-start space-x-3">
+                          <button
+                            onClick={() => updatePaymentType(item.id, 'cash')}
+                            className={`relative px-4 py-3 rounded-xl text-sm font-bold transition-all duration-300 transform hover:scale-105 ${
+                              item.paymentType === 'cash'
+                                ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg scale-105'
+                                : 'bg-white text-gray-600 hover:bg-green-50 border-2 border-gray-200 hover:border-green-300'
+                            }`}
+                          >
+                            {item.paymentType === 'cash' && (
+                              <div className="absolute -top-1 -right-1 bg-green-400 text-white p-1 rounded-full">
+                                <Check className="h-3 w-3" />
+                              </div>
+                            )}
+                            <DollarSign className="h-4 w-4 inline mr-2" />
+                            Efectivo
+                            {item.paymentType === 'cash' && (
+                              <Sparkles className="h-3 w-3 inline ml-2 animate-pulse" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => updatePaymentType(item.id, 'transfer')}
+                            className={`relative px-4 py-3 rounded-xl text-sm font-bold transition-all duration-300 transform hover:scale-105 ${
+                              item.paymentType === 'transfer'
+                                ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-lg scale-105'
+                                : 'bg-white text-gray-600 hover:bg-orange-50 border-2 border-gray-200 hover:border-orange-300'
+                            }`}
+                          >
+                            {item.paymentType === 'transfer' && (
+                              <div className="absolute -top-1 -right-1 bg-orange-400 text-white p-1 rounded-full">
+                                <Check className="h-3 w-3" />
+                              </div>
+                            )}
+                            <CreditCard className="h-4 w-4 inline mr-2" />
+                            Transferencia
+                            <span className="ml-1 text-xs opacity-90">
+                              (+{adminContext?.state?.prices?.transferFeePercentage || 10}%)
+                            </span>
+                            {item.paymentType === 'transfer' && (
+                              <Zap className="h-3 w-3 inline ml-2 animate-pulse" />
+                            )}
+                          </button>
                         </div>
-                        {item.paymentType === 'transfer' && (
-                          <div className="text-xs text-orange-600 mt-1">
-                            +10% incluido
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex-shrink-0 flex items-center justify-center sm:justify-start space-x-2 mt-2 sm:mt-0">
-                    {item.type === 'tv' && (
-                      <Link
-                        to={getItemUrl(item)}
-                        className="p-2 text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded-full transition-colors touch-manipulation"
-                        title="Editar temporadas"
+                  <div className="flex-shrink-0 w-full sm:w-auto sm:ml-4 space-y-3">
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-4 border-2 border-green-200 shadow-lg sm:min-w-[160px] transform hover:scale-105 transition-all duration-300">
+                      <div className="text-center">
+                        <div className="text-sm font-bold text-green-700 mb-2 flex items-center justify-center">
+                          {item.paymentType === 'cash' ? (
+                            <DollarSign className="h-4 w-4 mr-1" />
+                          ) : (
+                            <CreditCard className="h-4 w-4 mr-1" />
+                          )}
+                          {item.paymentType === 'cash' ? 'Efectivo' : 'Transferencia'}
+                        </div>
+                        <div className="text-xl sm:text-2xl font-black text-green-800 mb-1">
+                          ${calculateItemPrice(item).toLocaleString()} CUP
+                        </div>
+                        {item.paymentType === 'transfer' && (
+                          <div className="text-xs text-orange-600 font-semibold bg-orange-100 px-2 py-1 rounded-full">
+                            +{adminContext?.state?.prices?.transferFeePercentage || 10}% incluido
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center justify-center space-x-2">
+                      {item.type === 'tv' && (
+                        <Link
+                          to={getItemUrl(item)}
+                          className="p-3 text-purple-600 hover:text-white hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500 bg-purple-50 rounded-xl transition-all duration-300 transform hover:scale-110 shadow-md hover:shadow-lg"
+                          title="Editar temporadas"
+                        >
+                          <Edit3 className="h-5 w-5" />
+                        </Link>
+                      )}
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        className="p-3 text-red-600 hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-500 bg-red-50 rounded-xl transition-all duration-300 transform hover:scale-110 shadow-md hover:shadow-lg"
+                        title="Eliminar del carrito"
                       >
-                        <Edit3 className="h-4 w-4" />
-                      </Link>
-                    )}
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-full transition-colors touch-manipulation"
-                      title="Eliminar del carrito"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </button>
+                        <Trash2 className="h-5 w-5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -301,7 +299,7 @@ export function Cart() {
               </h3>
               <div className="text-center sm:text-right">
                 <div className="text-2xl sm:text-3xl font-bold">${totalPrice.toLocaleString()} CUP</div>
-                <div className="text-sm opacity-90">{cartState.total} elementos</div>
+                <div className="text-sm opacity-90">{state.total} elementos</div>
               </div>
             </div>
           </div>
@@ -325,7 +323,7 @@ export function Cart() {
                       ${totalsByPaymentType.cash.toLocaleString()} CUP
                     </div>
                     <div className="text-sm text-green-600">
-                      {cartState.items.filter(item => item.paymentType === 'cash').length} elementos
+                      {state.items.filter(item => item.paymentType === 'cash').length} elementos
                     </div>
                   </div>
                 </div>
@@ -340,7 +338,7 @@ export function Cart() {
                       ${totalsByPaymentType.transfer.toLocaleString()} CUP
                     </div>
                     <div className="text-sm text-orange-600">
-                      {cartState.items.filter(item => item.paymentType === 'transfer').length} elementos (+10%)
+                      {state.items.filter(item => item.paymentType === 'transfer').length} elementos (+10%)
                     </div>
                   </div>
                 </div>
@@ -362,7 +360,7 @@ export function Cart() {
               </h4>
               
               <div className="space-y-3 max-h-64 overflow-y-auto">
-                {cartState.items.map((item) => {
+                {state.items.map((item) => {
                   const itemPrice = calculateItemPrice(item);
                   const basePrice = item.type === 'movie' ? 80 : (item.selectedSeasons?.length || 1) * 300;
                   return (
@@ -465,8 +463,8 @@ export function Cart() {
                   <div className="flex items-center">
                     <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
                     <span className="font-medium">
-                      {cartState.items.length > 0 
-                        ? (cartState.items.reduce((acc, item) => acc + item.vote_average, 0) / cartState.items.length).toFixed(1)
+                      {state.items.length > 0 
+                        ? (state.items.reduce((acc, item) => acc + item.vote_average, 0) / state.items.length).toFixed(1)
                         : '0.0'
                       }
                     </span>
@@ -475,8 +473,8 @@ export function Cart() {
                 <div className="flex flex-col sm:flex-row justify-between items-center space-y-1 sm:space-y-0">
                   <span className="text-gray-600">Contenido más reciente:</span>
                   <span className="font-medium">
-                    {cartState.items.length > 0 
-                      ? Math.max(...cartState.items.map(item => {
+                    {state.items.length > 0 
+                      ? Math.max(...state.items.map(item => {
                           const date = item.release_date || item.first_air_date;
                           return date ? new Date(date).getFullYear() : 0;
                         }))
@@ -510,7 +508,7 @@ export function Cart() {
           isOpen={showCheckoutModal}
           onClose={() => setShowCheckoutModal(false)}
           onCheckout={handleCheckout}
-          items={cartState.items.map(item => ({
+          items={state.items.map(item => ({
             id: item.id,
             title: item.title,
             price: calculateItemPrice(item),
@@ -518,21 +516,6 @@ export function Cart() {
           }))}
           total={totalPrice}
         />
-        
-        {/* Admin Login Modal */}
-        <AdminLogin
-          isOpen={showAdminLogin}
-          onClose={() => setShowAdminLogin(false)}
-          onSuccess={handleAdminLoginSuccess}
-        />
-        
-        {/* Admin Panel */}
-        {adminState.isAuthenticated && (
-          <AdminPanel
-            isOpen={showAdminPanel}
-            onClose={() => setShowAdminPanel(false)}
-          />
-        )}
       </div>
     </div>
   );

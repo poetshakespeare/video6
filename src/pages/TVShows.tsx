@@ -1,77 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { Tv, Filter } from 'lucide-react';
+import { useOptimizedContent } from '../hooks/useOptimizedContent';
 import { tmdbService } from '../services/tmdb';
 import { MovieCard } from '../components/MovieCard';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorMessage } from '../components/ErrorMessage';
 import type { TVShow } from '../types/movie';
 
-type TVCategory = 'popular' | 'top_rated';
+type TVCategory = 'popular' | 'top_rated' | 'airing_today' | 'on_the_air';
 
 export function TVShows() {
-  const [tvShows, setTVShows] = useState<TVShow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState<TVCategory>('popular');
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
 
   const categoryTitles = {
     popular: 'Populares',
-    top_rated: 'Mejor Valoradas'
+    top_rated: 'Mejor Valoradas',
+    airing_today: 'Al Aire Hoy',
+    on_the_air: 'En Emisión'
   };
 
-  const fetchTVShows = async (selectedCategory: TVCategory, pageNum: number, append: boolean = false) => {
-    try {
-      if (!append) setLoading(true);
-      
-      let response;
-      switch (selectedCategory) {
-        case 'top_rated':
-          response = await tmdbService.getTopRatedTVShows(pageNum);
-          break;
-        default:
-          response = await tmdbService.getPopularTVShows(pageNum);
-      }
-
-      // Remove duplicates to ensure fresh content
-      const uniqueResults = tmdbService.removeDuplicates(response.results);
-
-      if (append) {
-        setTVShows(prev => tmdbService.removeDuplicates([...prev, ...uniqueResults]));
-      } else {
-        setTVShows(uniqueResults);
-      }
-      
-      setHasMore(pageNum < response.total_pages);
-    } catch (err) {
-      setError('Error al cargar las series. Por favor, intenta de nuevo.');
-      console.error('Error fetching TV shows:', err);
-    } finally {
-      setLoading(false);
+  const getFetchFunction = (selectedCategory: TVCategory) => {
+    switch (selectedCategory) {
+      case 'top_rated':
+        return tmdbService.getTopRatedTVShows.bind(tmdbService);
+      case 'airing_today':
+        return tmdbService.getAiringTodayTVShows.bind(tmdbService);
+      case 'on_the_air':
+        return tmdbService.getOnTheAirTVShows.bind(tmdbService);
+      default:
+        return tmdbService.getPopularTVShows.bind(tmdbService);
     }
   };
 
-  useEffect(() => {
-    setPage(1);
-    fetchTVShows(category, 1, false);
-    
-    // Auto-refresh content daily
-    const dailyRefresh = setInterval(() => {
-      fetchTVShows(category, 1, false);
-    }, 24 * 60 * 60 * 1000); // 24 hours
-    
-    return () => clearInterval(dailyRefresh);
-  }, [category]);
+  const { data: tvShows, loading, error, hasMore, loadMore } = useOptimizedContent(
+    getFetchFunction(category),
+    [category]
+  );
 
   const handleCategoryChange = (newCategory: TVCategory) => {
     setCategory(newCategory);
-  };
-
-  const loadMore = () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    fetchTVShows(category, nextPage, true);
   };
 
   if (loading && tvShows.length === 0) {

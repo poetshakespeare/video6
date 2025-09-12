@@ -1,4 +1,5 @@
 import { tmdbService } from './tmdb';
+import { contentFilterService } from '../services/contentFilter';
 import type { Movie, TVShow } from '../types/movie';
 
 class ContentSyncService {
@@ -55,12 +56,14 @@ class ContentSyncService {
       this.syncInProgress = true;
       console.log(`Performing ${isWeeklyUpdate ? 'weekly' : 'daily'} content sync...`);
 
-      // Sync trending content
+      // Enhanced sync with comprehensive content fetching
       await Promise.all([
         this.syncTrendingContent('day'),
         this.syncTrendingContent('week'),
         this.syncPopularContent(),
-        this.syncAnimeContent()
+        this.syncCurrentContent(),
+        this.syncAnimeContent(),
+        this.syncVideosForPopularContent()
       ]);
 
       const now = new Date();
@@ -78,10 +81,93 @@ class ContentSyncService {
     }
   }
 
+  private async syncCurrentContent() {
+    try {
+      // Sync current/now playing content for the most up-to-date titles
+      const [nowPlayingMovies, airingTodayTV, onTheAirTV] = await Promise.all([
+        tmdbService.getNowPlayingMovies(1),
+        tmdbService.getAiringTodayTVShows(1),
+        tmdbService.getOnTheAirTVShows(1)
+      ]);
+
+      localStorage.setItem('now_playing_movies', JSON.stringify({
+        content: nowPlayingMovies.results,
+        lastUpdate: new Date().toISOString()
+      }));
+
+      localStorage.setItem('airing_today_tv', JSON.stringify({
+        content: airingTodayTV.results,
+        lastUpdate: new Date().toISOString()
+      }));
+
+      localStorage.setItem('on_the_air_tv', JSON.stringify({
+        content: onTheAirTV.results,
+        lastUpdate: new Date().toISOString()
+      }));
+
+      return { nowPlayingMovies: nowPlayingMovies.results, airingTodayTV: airingTodayTV.results, onTheAirTV: onTheAirTV.results };
+    } catch (error) {
+      console.error('Error syncing current content:', error);
+      return { nowPlayingMovies: [], airingTodayTV: [], onTheAirTV: [] };
+    }
+  }
+
+  private async syncVideosForPopularContent() {
+    try {
+      // Get comprehensive content to sync videos including current content
+      const [moviesRes, tvRes, animeRes, nowPlayingRes, airingTodayRes] = await Promise.all([
+        tmdbService.getPopularMovies(1),
+        tmdbService.getPopularTVShows(1),
+        tmdbService.getAnimeFromMultipleSources(1),
+        tmdbService.getNowPlayingMovies(1),
+        tmdbService.getAiringTodayTVShows(1)
+      ]);
+
+      // Prepare items for batch video fetching
+      const items = [
+        ...moviesRes.results.slice(0, 8).map(movie => ({ id: movie.id, type: 'movie' as const })),
+        ...tvRes.results.slice(0, 8).map(tv => ({ id: tv.id, type: 'tv' as const })),
+        ...animeRes.results.slice(0, 6).map(anime => ({ id: anime.id, type: 'tv' as const })),
+        ...nowPlayingRes.results.slice(0, 8).map(movie => ({ id: movie.id, type: 'movie' as const })),
+        ...airingTodayRes.results.slice(0, 6).map(tv => ({ id: tv.id, type: 'tv' as const }))
+      ];
+
+      // Remove duplicates from items list
+      const uniqueItems = items.filter((item, index, self) => 
+        index === self.findIndex(t => t.id === item.id && t.type === item.type)
+      );
+
+      // Batch fetch videos with error handling
+      try {
+        const videoMap = await tmdbService.batchFetchVideos(uniqueItems);
+        
+        // Store video data
+        const videoData: { [key: string]: any[] } = {};
+        videoMap.forEach((videos, key) => {
+          videoData[key] = videos;
+        });
+
+        localStorage.setItem('content_videos', JSON.stringify({
+          videos: videoData,
+          lastUpdate: new Date().toISOString()
+        }));
+
+        console.log(`Synced videos for ${uniqueItems.length} unique items`);
+      } catch (videoError) {
+        console.warn('Some videos could not be synced:', videoError);
+        // Continue without failing the entire sync
+      }
+    } catch (error) {
+      console.error('Error syncing videos:', error);
+      // Don't throw, just log the error
+    }
+  }
+
   private async syncTrendingContent(timeWindow: 'day' | 'week') {
     try {
       const response = await tmdbService.getTrendingAll(timeWindow, 1);
-      const uniqueContent = tmdbService.removeDuplicates(response.results);
+      const filteredContent = contentFilterService.filterContent(response.results);
+      const uniqueContent = tmdbService.removeDuplicates(filteredContent);
       
       // Store in localStorage for quick access
       localStorage.setItem(`trending_${timeWindow}`, JSON.stringify({
@@ -103,17 +189,20 @@ class ContentSyncService {
         tmdbService.getPopularTVShows(1)
       ]);
 
+      const filteredMovies = contentFilterService.filterContent(movies.results);
+      const filteredTVShows = contentFilterService.filterContent(tvShows.results);
+
       localStorage.setItem('popular_movies', JSON.stringify({
-        content: movies.results,
+        content: filteredMovies,
         lastUpdate: new Date().toISOString()
       }));
 
       localStorage.setItem('popular_tv', JSON.stringify({
-        content: tvShows.results,
+        content: filteredTVShows,
         lastUpdate: new Date().toISOString()
       }));
 
-      return { movies: movies.results, tvShows: tvShows.results };
+      return { movies: filteredMovies, tvShows: filteredTVShows };
     } catch (error) {
       console.error('Error syncing popular content:', error);
       return { movies: [], tvShows: [] };
@@ -122,14 +211,15 @@ class ContentSyncService {
 
   private async syncAnimeContent() {
     try {
-      const anime = await tmdbService.getPopularAnime(1);
+      const anime = await tmdbService.getAnimeFromMultipleSources(1);
+      const filteredAnime = contentFilterService.filterContent(anime.results);
       
       localStorage.setItem('popular_anime', JSON.stringify({
-        content: anime.results,
+        content: filteredAnime,
         lastUpdate: new Date().toISOString()
       }));
 
-      return anime.results;
+      return filteredAnime;
     } catch (error) {
       console.error('Error syncing anime content:', error);
       return [];
@@ -164,7 +254,7 @@ class ContentSyncService {
     const [movies, tvShows, anime] = await Promise.all([
       this.getCachedOrFresh('popular_movies', () => tmdbService.getPopularMovies(1)),
       this.getCachedOrFresh('popular_tv', () => tmdbService.getPopularTVShows(1)),
-      this.getCachedOrFresh('popular_anime', () => tmdbService.getPopularAnime(1))
+      this.getCachedOrFresh('popular_anime', () => tmdbService.getAnimeFromMultipleSources(1))
     ]);
 
     return {
@@ -172,6 +262,21 @@ class ContentSyncService {
       tvShows: tvShows.results || tvShows,
       anime: anime.results || anime
     };
+  }
+
+  // Get cached videos for content
+  getCachedVideos(id: number, type: 'movie' | 'tv'): any[] {
+    try {
+      const cached = localStorage.getItem('content_videos');
+      if (cached) {
+        const { videos } = JSON.parse(cached);
+        const key = `${type}-${id}`;
+        return videos[key] || [];
+      }
+    } catch (error) {
+      console.error('Error getting cached videos:', error);
+    }
+    return [];
   }
 
   private async getCachedOrFresh(key: string, fetchFn: () => Promise<any>) {
@@ -206,6 +311,21 @@ class ContentSyncService {
   async forceRefresh(): Promise<void> {
     this.lastDailyUpdate = null;
     this.lastWeeklyUpdate = null;
+    
+    // Clear all content caches
+    await tmdbService.forceRefreshAllContent();
+    
+    // Clear cached videos
+    localStorage.removeItem('content_videos');
+    
+    // Clear all content caches
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.includes('trending') || key.includes('popular') || key.includes('now_playing') || key.includes('airing')) {
+        localStorage.removeItem(key);
+      }
+    });
+    
     await this.performSync(true);
   }
 

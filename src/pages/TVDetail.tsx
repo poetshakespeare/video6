@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Star, Calendar, Tv, Plus, X, Play, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Star, Calendar, Tv, Plus, X, Play, ChevronDown, Monitor, Rocket, Film, Clock2, Globe, Users, Building, MapPin, Sparkles, Heart, Zap, Check } from 'lucide-react';
 import { tmdbService } from '../services/tmdb';
 import { VideoPlayer } from '../components/VideoPlayer';
 import { PriceCard } from '../components/PriceCard';
@@ -8,11 +8,13 @@ import { CastSection } from '../components/CastSection';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { useCart } from '../context/CartContext';
+import { AdminContext } from '../context/AdminContext';
 import { IMAGE_BASE_URL, BACKDROP_SIZE } from '../config/api';
 import type { TVShowDetails, Video, CartItem, Season, CastMember } from '../types/movie';
 
 export function TVDetail() {
   const { id } = useParams<{ id: string }>();
+  const adminContext = React.useContext(AdminContext);
   const [tvShow, setTVShow] = useState<TVShowDetails | null>(null);
   const [videos, setVideos] = useState<Video[]>([]);
   const [cast, setCast] = useState<CastMember[]>([]);
@@ -22,7 +24,12 @@ export function TVDetail() {
   const [showSeasonSelector, setShowSeasonSelector] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCartHovered, setIsCartHovered] = useState(false);
+  const [showCartAnimation, setShowCartAnimation] = useState(false);
   const { addItem, removeItem, updateSeasons, isInCart, getItemSeasons } = useCart();
+
+  // Get current prices with real-time updates
+  const seriesPrice = adminContext?.state?.prices?.seriesPrice || 300;
 
   const tvId = parseInt(id || '0');
   const inCart = isInCart(tvId);
@@ -44,23 +51,30 @@ export function TVDetail() {
     const fetchTVData = async () => {
       try {
         setLoading(true);
-        const [tvData, videoData, creditsData] = await Promise.all([
+        
+        // Fetch TV details and credits first
+        const [tvData, creditsData] = await Promise.all([
           tmdbService.getTVShowDetails(tvId),
-          tmdbService.getTVShowVideos(tvId),
           tmdbService.getTVShowCredits(tvId)
         ]);
 
         setTVShow(tvData);
         setCast(creditsData.cast || []);
         
-        // Filter for trailers and teasers
-        const trailers = videoData.results.filter(
-          video => video.site === 'YouTube' && (video.type === 'Trailer' || video.type === 'Teaser')
-        );
-        setVideos(trailers);
-        
-        if (trailers.length > 0) {
-          setSelectedVideo(trailers[0]);
+        // Fetch videos separately with error handling
+        try {
+          const videoData = await tmdbService.getTVShowVideos(tvId);
+          const trailers = videoData.results.filter(
+            video => video.site === 'YouTube' && (video.type === 'Trailer' || video.type === 'Teaser')
+          );
+          setVideos(trailers);
+          
+          if (trailers.length > 0) {
+            setSelectedVideo(trailers[0]);
+          }
+        } catch (videoError) {
+          console.warn(`No videos available for TV show ${tvId}`);
+          setVideos([]);
         }
       } catch (err) {
         setError('Error al cargar los detalles de la serie.');
@@ -109,6 +123,9 @@ export function TVDetail() {
 
   const handleCartAction = () => {
     if (!tvShow) return;
+
+    setShowCartAnimation(true);
+    setTimeout(() => setShowCartAnimation(false), 2000);
 
     const validSeasons = tvShow.seasons.filter(season => season.season_number > 0);
     
@@ -337,6 +354,20 @@ export function TVDetail() {
                   </div>
                   Detalles de la Serie
                 </h3>
+                
+                {/* Episode count warning for series with 50+ episodes */}
+                {tvShow.number_of_episodes > 50 && (
+                  <div className="mt-4 p-3 bg-yellow-100/20 backdrop-blur-sm rounded-lg border border-yellow-300/30">
+                    <div className="flex items-center mb-2">
+                      <span className="text-yellow-300 mr-2">⚠️</span>
+                      <span className="text-sm font-semibold">Información Importante</span>
+                    </div>
+                    <p className="text-xs text-yellow-100 leading-relaxed">
+                      Esta serie tiene {tvShow.number_of_episodes} episodios. Hasta 50 episodios se contempla como una temporada (${seriesPrice} CUP). 
+                      Para más episodios, contacte con TV a la Carta para información adicional.
+                    </p>
+                  </div>
+                )}
               </div>
               
               <div className="p-6">
@@ -439,29 +470,59 @@ export function TVDetail() {
                 </div>
               )}
 
-              <button
+              <div className="relative">
+                <button
                 onClick={handleCartAction}
+                onMouseEnter={() => setIsCartHovered(true)}
+                onMouseLeave={() => setIsCartHovered(false)}
                 disabled={!isAddToCartEnabled()}
-                className={`w-full mb-6 px-6 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center transform ${
+                className={`w-full mb-6 px-6 py-5 rounded-2xl font-bold transition-all duration-500 flex items-center justify-center transform relative overflow-hidden ${
                   !isAddToCartEnabled()
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : inCart
-                      ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white hover:scale-105 hover:shadow-lg'
-                      : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white hover:scale-105 hover:shadow-lg'
-                }`}
-              >
+                      ? 'bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 hover:from-green-600 hover:via-emerald-600 hover:to-teal-600 text-white shadow-2xl scale-105'
+                      : 'bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 hover:from-purple-600 hover:via-pink-600 hover:to-red-600 text-white shadow-xl'
+                } ${isCartHovered ? 'scale-110 shadow-2xl' : ''} ${showCartAnimation ? 'animate-pulse' : ''}`}
+                >
+                {/* Animated background effect */}
+                <div className={`absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transition-all duration-500 ${
+                  isCartHovered ? 'animate-pulse' : ''
+                }`} />
+                
+                {/* Floating icons */}
+                {isCartHovered && (
+                  <>
+                    <Sparkles className="absolute top-2 left-4 h-4 w-4 text-yellow-300 animate-bounce" />
+                    <Heart className="absolute top-2 right-4 h-4 w-4 text-pink-300 animate-pulse" />
+                    <Zap className="absolute bottom-2 left-6 h-4 w-4 text-blue-300 animate-bounce delay-100" />
+                    <Star className="absolute bottom-2 right-6 h-4 w-4 text-yellow-300 animate-pulse delay-200" />
+                  </>
+                )}
+                
                 {inCart ? (
                   <>
-                    <X className="mr-2 h-5 w-5" />
-                    Retirar del Carrito
+                    <X className={`mr-3 h-6 w-6 transition-transform duration-300 relative z-10 ${
+                      isCartHovered ? 'rotate-90 scale-125' : ''
+                    }`} />
+                    <span className="relative z-10 text-lg">Retirar del Carrito</span>
                   </>
                 ) : (
                   <>
-                    <Plus className="mr-2 h-5 w-5" />
-                    Agregar al Carrito
+                    <Plus className={`mr-3 h-6 w-6 transition-transform duration-300 relative z-10 ${
+                      isCartHovered ? 'rotate-180 scale-125' : ''
+                    }`} />
+                    <span className="relative z-10 text-lg">Agregar al Carrito</span>
                   </>
                 )}
-              </button>
+                </button>
+                
+                {/* Success indicator */}
+                {inCart && (
+                  <div className="absolute -top-2 -right-2 bg-gradient-to-r from-green-400 to-emerald-400 text-white p-2 rounded-full animate-bounce shadow-lg">
+                    <Check className="h-4 w-4" />
+                  </div>
+                )}
+              </div>
 
               {/* Mensaje informativo sobre selección automática */}
               {hasMultipleSeasons && selectedSeasons.length === 0 && !inCart && (
@@ -483,8 +544,8 @@ export function TVDetail() {
               <div className="space-y-6">
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-purple-200 transition-colors">
                   <div className="flex items-center mb-2">
-                    <div className="bg-purple-100 p-2 rounded-lg mr-3 shadow-sm animate-pulse">
-                      <span className="text-sm">📺</span>
+                    <div className="bg-purple-100 p-2 rounded-lg mr-3 shadow-sm">
+                      <Monitor className="h-4 w-4 text-purple-600" />
                     </div>
                     <h3 className="font-semibold text-gray-900">Estado</h3>
                   </div>
@@ -493,8 +554,8 @@ export function TVDetail() {
                 
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-blue-200 transition-colors">
                   <div className="flex items-center mb-2">
-                    <div className="bg-blue-100 p-2 rounded-lg mr-3 shadow-sm animate-bounce">
-                      <span className="text-sm">🚀</span>
+                    <div className="bg-blue-100 p-2 rounded-lg mr-3 shadow-sm">
+                      <Rocket className="h-4 w-4 text-blue-600" />
                     </div>
                     <h3 className="font-semibold text-gray-900">Primera Emisión</h3>
                   </div>
@@ -505,8 +566,8 @@ export function TVDetail() {
                 
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-green-200 transition-colors">
                   <div className="flex items-center mb-2">
-                    <div className="bg-green-100 p-2 rounded-lg mr-3 shadow-sm animate-pulse">
-                      <span className="text-sm">🎬</span>
+                    <div className="bg-green-100 p-2 rounded-lg mr-3 shadow-sm">
+                      <Film className="h-4 w-4 text-green-600" />
                     </div>
                     <h3 className="font-semibold text-gray-900">Temporadas</h3>
                   </div>
@@ -515,18 +576,27 @@ export function TVDetail() {
                 
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-yellow-200 transition-colors">
                   <div className="flex items-center mb-2">
-                    <div className="bg-yellow-100 p-2 rounded-lg mr-3 shadow-sm animate-bounce">
-                      <span className="text-sm">🎞️</span>
+                    <div className="bg-yellow-100 p-2 rounded-lg mr-3 shadow-sm">
+                      <Tv className="h-4 w-4 text-yellow-600" />
                     </div>
                     <h3 className="font-semibold text-gray-900">Episodios</h3>
                   </div>
-                  <p className="text-gray-700 font-medium ml-11">{tvShow.number_of_episodes}</p>
+                  <div className="ml-11">
+                    <p className="text-gray-700 font-medium">{tvShow.number_of_episodes}</p>
+                    {tvShow.number_of_episodes > 50 && (
+                      <div className="mt-2 p-2 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <p className="text-xs text-yellow-700 font-medium">
+                          ⚠️ Más de 50 episodios: Consultar condiciones especiales
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-indigo-200 transition-colors">
                   <div className="flex items-center mb-2">
-                    <div className="bg-indigo-100 p-2 rounded-lg mr-3 shadow-sm animate-pulse">
-                      <span className="text-sm">⏰</span>
+                    <div className="bg-indigo-100 p-2 rounded-lg mr-3 shadow-sm">
+                      <Clock2 className="h-4 w-4 text-indigo-600" />
                     </div>
                     <h3 className="font-semibold text-gray-900">Duración</h3>
                   </div>
@@ -540,8 +610,8 @@ export function TVDetail() {
 
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-pink-200 transition-colors">
                   <div className="flex items-center mb-2">
-                    <div className="bg-pink-100 p-2 rounded-lg mr-3 shadow-sm animate-bounce">
-                      <span className="text-sm">🌐</span>
+                    <div className="bg-pink-100 p-2 rounded-lg mr-3 shadow-sm">
+                      <Globe className="h-4 w-4 text-pink-600" />
                     </div>
                     <h3 className="font-semibold text-gray-900">Idioma Original</h3>
                   </div>
@@ -550,8 +620,8 @@ export function TVDetail() {
 
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-red-200 transition-colors">
                   <div className="flex items-center mb-2">
-                    <div className="bg-red-100 p-2 rounded-lg mr-3 shadow-sm animate-pulse">
-                      <span className="text-sm">🗳️</span>
+                    <div className="bg-red-100 p-2 rounded-lg mr-3 shadow-sm">
+                      <Users className="h-4 w-4 text-red-600" />
                     </div>
                     <h3 className="font-semibold text-gray-900">Votos</h3>
                   </div>
@@ -563,8 +633,8 @@ export function TVDetail() {
                 {tvShow.production_companies.length > 0 && (
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-orange-200 transition-colors">
                     <div className="flex items-center mb-3">
-                      <div className="bg-orange-100 p-2 rounded-lg mr-3 shadow-sm animate-pulse">
-                        <span className="text-sm">🏭</span>
+                      <div className="bg-orange-100 p-2 rounded-lg mr-3 shadow-sm">
+                        <Building className="h-4 w-4 text-orange-600" />
                       </div>
                       <h3 className="font-semibold text-gray-900">Productoras</h3>
                     </div>
@@ -583,8 +653,8 @@ export function TVDetail() {
                 {tvShow.production_countries.length > 0 && (
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-teal-200 transition-colors">
                     <div className="flex items-center mb-3">
-                      <div className="bg-teal-100 p-2 rounded-lg mr-3 shadow-sm animate-bounce">
-                        <span className="text-sm">🌍</span>
+                      <div className="bg-teal-100 p-2 rounded-lg mr-3 shadow-sm">
+                        <MapPin className="h-4 w-4 text-teal-600" />
                       </div>
                       <h3 className="font-semibold text-gray-900">Países</h3>
                     </div>

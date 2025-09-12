@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, Filter } from 'lucide-react';
 import { tmdbService } from '../services/tmdb';
+import { performanceOptimizer } from '../utils/performance';
 import { MovieCard } from '../components/MovieCard';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorMessage } from '../components/ErrorMessage';
@@ -94,12 +95,17 @@ export function SearchPage() {
     }
   };
 
+  // Debounced search function
+  const debouncedSearch = React.useMemo(
+    () => performanceOptimizer.debounce(performSearch, 300),
+    [performSearch]
+  );
+
   useEffect(() => {
     if (query) {
-      setPage(1);
-      performSearch(query, searchType, 1, false);
+      debouncedSearch(query, searchType, 1, false);
     }
-  }, [query, searchType]);
+  }, [query, searchType, debouncedSearch]);
 
   const handleTypeChange = (newType: SearchType) => {
     setSearchType(newType);

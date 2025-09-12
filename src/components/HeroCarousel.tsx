@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Star, Calendar, Play, Pause } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Star, Calendar, Play, Pause, Sparkles, Zap, Heart } from 'lucide-react';
+import { OptimizedImage } from './OptimizedImage';
 import { tmdbService } from '../services/tmdb';
+import { contentSyncService } from '../services/contentSync';
+import { performanceOptimizer } from '../utils/performance';
 import { IMAGE_BASE_URL, BACKDROP_SIZE } from '../config/api';
 import type { Movie, TVShow, Video } from '../types/movie';
 
@@ -15,33 +18,72 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [progress, setProgress] = useState(0);
   const [itemVideos, setItemVideos] = useState<{ [key: number]: Video[] }>({});
+  const [preloadedImages, setPreloadedImages] = useState<Set<string>>(new Set());
+  const [isButtonHovered, setIsButtonHovered] = useState<string | null>(null);
 
   const AUTOPLAY_INTERVAL = 6000; // 6 seconds
+
+  // Preload next images for smooth transitions
+  useEffect(() => {
+    const preloadNextImages = () => {
+      const nextIndex = (currentIndex + 1) % items.length;
+      const prevIndex = (currentIndex - 1 + items.length) % items.length;
+      
+      [nextIndex, prevIndex].forEach(index => {
+        const item = items[index];
+        if (item?.backdrop_path) {
+          const imageUrl = `${IMAGE_BASE_URL}/${BACKDROP_SIZE}${item.backdrop_path}`;
+          if (!preloadedImages.has(imageUrl)) {
+            performanceOptimizer.preloadResource(imageUrl, 'image');
+            setPreloadedImages(prev => new Set([...prev, imageUrl]));
+          }
+        }
+      });
+    };
+
+    preloadNextImages();
+  }, [currentIndex, items, preloadedImages]);
 
   // Cargar videos para cada item
   useEffect(() => {
     const loadVideos = async () => {
       const videoPromises = items.map(async (item) => {
         try {
+          // Check cache first
           const isMovie = 'title' in item;
-          const videoData = isMovie 
-            ? await tmdbService.getMovieVideos(item.id)
-            : await tmdbService.getTVShowVideos(item.id);
+          const cachedVideoData = contentSyncService?.getCachedVideos?.(item.id, isMovie ? 'movie' : 'tv');
           
-          const trailers = videoData.results.filter(
-            video => video.site === 'YouTube' && (video.type === 'Trailer' || video.type === 'Teaser')
-          );
+          if (cachedVideoData && cachedVideoData.length > 0) {
+            return { id: item.id, videos: cachedVideoData };
+          }
           
-          return { id: item.id, videos: trailers };
+          // Fallback to API call with error handling
+          try {
+            const videoData = isMovie 
+              ? await tmdbService.getMovieVideos(item.id)
+              : await tmdbService.getTVShowVideos(item.id);
+            
+            const trailers = videoData.results.filter(
+              video => video.site === 'YouTube' && (video.type === 'Trailer' || video.type === 'Teaser')
+            );
+            
+            return { id: item.id, videos: trailers };
+          } catch (videoError) {
+            console.warn(`No videos available for ${isMovie ? 'movie' : 'tv'} ${item.id}`);
+            return { id: item.id, videos: [] };
+          }
         } catch (error) {
-          console.error(`Error loading videos for item ${item.id}:`, error);
+          console.warn(`Error loading videos for item ${item.id}:`, error);
           return { id: item.id, videos: [] };
         }
       });
 
-      const results = await Promise.all(videoPromises);
-      const videosMap = results.reduce((acc, { id, videos }) => {
-        acc[id] = videos;
+      const results = await Promise.allSettled(videoPromises);
+      const videosMap = results.reduce((acc, result) => {
+        if (result.status === 'fulfilled') {
+          const { id, videos } = result.value;
+          acc[id] = videos;
+        }
         return acc;
       }, {} as { [key: number]: Video[] });
       
@@ -69,12 +111,12 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
     setProgress(0);
   }, [items.length, isTransitioning]);
 
-  const goToSlide = useCallback((index: number) => {
+  const goToSlide = useCallback(performanceOptimizer.throttle((index: number) => {
     if (isTransitioning || index === currentIndex) return;
     setIsTransitioning(true);
     setCurrentIndex(index);
     setProgress(0);
-  }, [currentIndex, isTransitioning]);
+  }, 100), [currentIndex, isTransitioning]);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -252,23 +294,60 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
               </p>
 
               <div className="flex space-x-4">
-                <button 
+                <button
                   onClick={handleWatchNow}
+                  onMouseEnter={() => setIsButtonHovered('watch')}
+                  onMouseLeave={() => setIsButtonHovered(null)}
                   disabled={!hasTrailer}
-                  className={`px-8 py-4 rounded-full font-semibold transition-all duration-300 hover:scale-105 flex items-center ${
+                  className={`px-8 py-4 rounded-full font-bold transition-all duration-500 flex items-center relative overflow-hidden ${
                     hasTrailer 
-                      ? 'bg-white text-black hover:bg-white/90' 
+                      ? 'bg-white text-black hover:bg-white/90 shadow-2xl transform hover:scale-110' 
                       : 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                  }`}
+                  } ${isButtonHovered === 'watch' ? 'scale-110 shadow-2xl' : ''}`}
                 >
-                  <Play className="h-5 w-5 mr-2" />
+                  {/* Animated background */}
+                  {hasTrailer && isButtonHovered === 'watch' && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-pink-500/20 animate-pulse" />
+                  )}
+                  
+                  {/* Floating icons */}
+                  {hasTrailer && isButtonHovered === 'watch' && (
+                    <>
+                      <Sparkles className="absolute top-1 left-2 h-3 w-3 text-red-500 animate-bounce" />
+                      <Zap className="absolute top-1 right-2 h-3 w-3 text-yellow-500 animate-pulse" />
+                    </>
+                  )}
+                  
+                  <Play className={`h-5 w-5 mr-2 relative z-10 transition-transform duration-300 ${
+                    isButtonHovered === 'watch' ? 'scale-125 text-red-600' : ''
+                  }`} />
                   {hasTrailer ? 'Ver Tráiler' : 'Sin Tráiler'}
                 </button>
-                <Link 
+                
+                <Link
                   to={`/${itemType}/${currentItem.id}`}
-                  className="bg-white/20 backdrop-blur-sm text-white px-8 py-4 rounded-full font-semibold hover:bg-white/30 transition-all duration-300 hover:scale-105 flex items-center"
+                  onMouseEnter={() => setIsButtonHovered('info')}
+                  onMouseLeave={() => setIsButtonHovered(null)}
+                  className={`bg-white/20 backdrop-blur-sm text-white px-8 py-4 rounded-full font-bold transition-all duration-500 flex items-center relative overflow-hidden shadow-xl ${
+                    isButtonHovered === 'info' ? 'bg-white/40 scale-110 shadow-2xl' : 'hover:bg-white/30 hover:scale-105'
+                  }`}
                 >
+                  {/* Animated background */}
+                  {isButtonHovered === 'info' && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/30 to-purple-500/30 animate-pulse" />
+                  )}
+                  
+                  {/* Floating icons */}
+                  {isButtonHovered === 'info' && (
+                    <>
+                      <Heart className="absolute top-1 left-2 h-3 w-3 text-pink-300 animate-pulse" />
+                      <Star className="absolute top-1 right-2 h-3 w-3 text-yellow-300 animate-bounce" />
+                    </>
+                  )}
+                  
+                  <span className="relative z-10">
                   Más Info
+                  </span>
                 </Link>
               </div>
             </div>

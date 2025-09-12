@@ -14,6 +14,44 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
     transferTotal = 0
   } = orderData;
 
+  // Obtener el porcentaje de transferencia actual del contexto admin
+  const getTransferFeePercentage = () => {
+    try {
+      const adminState = localStorage.getItem('admin_system_state');
+      if (adminState) {
+        const state = JSON.parse(adminState);
+        return state.prices?.transferFeePercentage || 10;
+      }
+    } catch (error) {
+      console.warn('No se pudo obtener el porcentaje de transferencia del admin:', error);
+    }
+    return 10; // Valor por defecto
+  };
+
+  // Obtener precios actuales del contexto admin
+  const getCurrentPrices = () => {
+    try {
+      const adminState = localStorage.getItem('admin_system_state');
+      if (adminState) {
+        const state = JSON.parse(adminState);
+        return {
+          moviePrice: state.prices?.moviePrice || 80,
+          seriesPrice: state.prices?.seriesPrice || 300,
+          transferFeePercentage: state.prices?.transferFeePercentage || 10
+        };
+      }
+    } catch (error) {
+      console.warn('No se pudieron obtener los precios del admin:', error);
+    }
+    return {
+      moviePrice: 80,
+      seriesPrice: 300,
+      transferFeePercentage: 10
+    };
+  };
+
+  const currentPrices = getCurrentPrices();
+  const transferFeePercentage = currentPrices.transferFeePercentage;
   // Formatear lista de productos
   const itemsList = items
     .map(item => {
@@ -21,9 +59,9 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
         ? `\n  📺 Temporadas: ${item.selectedSeasons.sort((a, b) => a - b).join(', ')}` 
         : '';
       const itemType = item.type === 'movie' ? 'Película' : 'Serie';
-      const basePrice = item.type === 'movie' ? 80 : (item.selectedSeasons?.length || 1) * 300;
-      const finalPrice = item.paymentType === 'transfer' ? Math.round(basePrice * 1.1) : basePrice;
-      const paymentTypeText = item.paymentType === 'transfer' ? 'Transferencia (+10%)' : 'Efectivo';
+      const basePrice = item.type === 'movie' ? currentPrices.moviePrice : (item.selectedSeasons?.length || 1) * currentPrices.seriesPrice;
+      const finalPrice = item.paymentType === 'transfer' ? Math.round(basePrice * (1 + transferFeePercentage / 100)) : basePrice;
+      const paymentTypeText = item.paymentType === 'transfer' ? `Transferencia (+${transferFeePercentage}%)` : 'Efectivo';
       const emoji = item.type === 'movie' ? '🎬' : '📺';
       return `${emoji} *${item.title}*${seasonInfo}\n  📋 Tipo: ${itemType}\n  💳 Pago: ${paymentTypeText}\n  💰 Precio: $${finalPrice.toLocaleString()} CUP`;
     })
@@ -52,7 +90,7 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
   if (cashItems.length > 0) {
     message += `💵 *EFECTIVO:*\n`;
     cashItems.forEach(item => {
-      const basePrice = item.type === 'movie' ? 80 : (item.selectedSeasons?.length || 1) * 300;
+      const basePrice = item.type === 'movie' ? currentPrices.moviePrice : (item.selectedSeasons?.length || 1) * currentPrices.seriesPrice;
       const emoji = item.type === 'movie' ? '🎬' : '📺';
       message += `  ${emoji} ${item.title}: $${basePrice.toLocaleString()} CUP\n`;
     });
@@ -60,10 +98,10 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
   }
   
   if (transferItems.length > 0) {
-    message += `🏦 *TRANSFERENCIA (+10%):*\n`;
+    message += `🏦 *TRANSFERENCIA (+${transferFeePercentage}%):*\n`;
     transferItems.forEach(item => {
-      const basePrice = item.type === 'movie' ? 80 : (item.selectedSeasons?.length || 1) * 300;
-      const finalPrice = Math.round(basePrice * 1.1);
+      const basePrice = item.type === 'movie' ? currentPrices.moviePrice : (item.selectedSeasons?.length || 1) * currentPrices.seriesPrice;
+      const finalPrice = Math.round(basePrice * (1 + transferFeePercentage / 100));
       const emoji = item.type === 'movie' ? '🎬' : '📺';
       message += `  ${emoji} ${item.title}: $${basePrice.toLocaleString()} → $${finalPrice.toLocaleString()} CUP\n`;
     });
@@ -80,7 +118,7 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
   message += `• *Subtotal Contenido: $${subtotal.toLocaleString()} CUP*\n`;
   
   if (transferFee > 0) {
-    message += `• Recargo transferencia (10%): +$${transferFee.toLocaleString()} CUP\n`;
+    message += `• Recargo transferencia (${transferFeePercentage}%): +$${transferFee.toLocaleString()} CUP\n`;
   }
   
   message += `🚚 Entrega (${deliveryZone.split(' > ')[2]}): +$${deliveryCost.toLocaleString()} CUP\n`;
@@ -101,6 +139,11 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
     message += `• Pago por transferencia: ${transferItems.length} elementos\n`;
   }
   message += `\n`;
+  
+  message += `💼 *CONFIGURACIÓN DE PRECIOS APLICADA:*\n`;
+  message += `• Películas: $${currentPrices.moviePrice.toLocaleString()} CUP\n`;
+  message += `• Series: $${currentPrices.seriesPrice.toLocaleString()} CUP por temporada\n`;
+  message += `• Recargo transferencia: ${transferFeePercentage}%\n\n`;
   
   message += `📱 *Enviado desde:* TV a la Carta App\n`;
   message += `⏰ *Fecha y hora:* ${new Date().toLocaleString('es-ES', {

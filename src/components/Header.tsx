@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search, ShoppingCart, Film } from 'lucide-react';
+import { performanceOptimizer } from '../utils/performance';
 import { useCart } from '../context/CartContext';
 
 export function Header() {
@@ -10,15 +11,18 @@ export function Header() {
   const { state } = useCart();
 
   // Real-time search effect
+  const debouncedNavigate = React.useMemo(
+    () => performanceOptimizer.debounce((query: string) => {
+      navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+    }, 500),
+    [navigate]
+  );
+
   React.useEffect(() => {
     if (searchQuery.trim() && searchQuery.length > 2) {
-      const timeoutId = setTimeout(() => {
-        navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      }, 500); // 500ms delay for debouncing
-
-      return () => clearTimeout(timeoutId);
+      debouncedNavigate(searchQuery.trim());
     }
-  }, [searchQuery, navigate]);
+  }, [searchQuery, debouncedNavigate]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

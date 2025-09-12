@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Star, Calendar, Clock, Plus, X, Play } from 'lucide-react';
+import { ArrowLeft, Star, Calendar, Clock, Plus, X, Play, Film, Globe, DollarSign, TrendingUp, Users, Building, Sparkles, Heart, Zap } from 'lucide-react';
 import { tmdbService } from '../services/tmdb';
 import { VideoPlayer } from '../components/VideoPlayer';
 import { PriceCard } from '../components/PriceCard';
@@ -20,6 +20,8 @@ export function MovieDetail() {
   const [showVideo, setShowVideo] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCartHovered, setIsCartHovered] = useState(false);
+  const [showCartAnimation, setShowCartAnimation] = useState(false);
   const { addItem, removeItem, isInCart } = useCart();
 
   const movieId = parseInt(id || '0');
@@ -33,23 +35,30 @@ export function MovieDetail() {
     const fetchMovieData = async () => {
       try {
         setLoading(true);
-        const [movieData, videoData, creditsData] = await Promise.all([
+        
+        // Fetch movie details and credits first
+        const [movieData, creditsData] = await Promise.all([
           tmdbService.getMovieDetails(movieId),
-          tmdbService.getMovieVideos(movieId),
           tmdbService.getMovieCredits(movieId)
         ]);
 
         setMovie(movieData);
         setCast(creditsData.cast || []);
         
-        // Filter for trailers and teasers
-        const trailers = videoData.results.filter(
-          video => video.site === 'YouTube' && (video.type === 'Trailer' || video.type === 'Teaser')
-        );
-        setVideos(trailers);
-        
-        if (trailers.length > 0) {
-          setSelectedVideo(trailers[0]);
+        // Fetch videos separately with error handling
+        try {
+          const videoData = await tmdbService.getMovieVideos(movieId);
+          const trailers = videoData.results.filter(
+            video => video.site === 'YouTube' && (video.type === 'Trailer' || video.type === 'Teaser')
+          );
+          setVideos(trailers);
+          
+          if (trailers.length > 0) {
+            setSelectedVideo(trailers[0]);
+          }
+        } catch (videoError) {
+          console.warn(`No videos available for movie ${movieId}`);
+          setVideos([]);
         }
       } catch (err) {
         setError('Error al cargar los detalles de la película.');
@@ -66,6 +75,9 @@ export function MovieDetail() {
 
   const handleCartAction = () => {
     if (!movie) return;
+
+    setShowCartAnimation(true);
+    setTimeout(() => setShowCartAnimation(false), 2000);
 
     const cartItem: CartItem = {
       id: movie.id,
@@ -266,26 +278,59 @@ export function MovieDetail() {
               </div>
               
               <div className="p-6">
-              <button
-                onClick={handleCartAction}
-                className={`w-full mb-6 px-6 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center transform hover:scale-105 hover:shadow-lg ${
+                <button
+                  onClick={handleCartAction}
+                  onMouseEnter={() => setIsCartHovered(true)}
+                  onMouseLeave={() => setIsCartHovered(false)}
+                  className={`w-full mb-6 px-6 py-5 rounded-2xl font-bold transition-all duration-500 flex items-center justify-center transform relative overflow-hidden ${
                   inCart
-                    ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white'
-                    : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white'
-                }`}
-              >
+                    ? 'bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500 hover:from-green-600 hover:via-emerald-600 hover:to-teal-600 text-white shadow-2xl scale-105'
+                    : 'bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 hover:from-blue-600 hover:via-purple-600 hover:to-pink-600 text-white shadow-xl'
+                } ${isCartHovered ? 'scale-110 shadow-2xl' : ''} ${showCartAnimation ? 'animate-pulse' : ''}`}
+                >
+                {/* Animated background effect */}
+                <div className={`absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transition-all duration-500 ${
+                  isCartHovered ? 'animate-pulse' : ''
+                }`} />
+                
+                {/* Floating icons */}
+                {isCartHovered && (
+                  <>
+                    <Sparkles className="absolute top-2 left-4 h-4 w-4 text-yellow-300 animate-bounce" />
+                    <Heart className="absolute top-2 right-4 h-4 w-4 text-pink-300 animate-pulse" />
+                    <Zap className="absolute bottom-2 left-6 h-4 w-4 text-blue-300 animate-bounce delay-100" />
+                    <Star className="absolute bottom-2 right-6 h-4 w-4 text-yellow-300 animate-pulse delay-200" />
+                  </>
+                )}
+                
                 {inCart ? (
                   <>
-                    <X className="mr-2 h-5 w-5" />
-                    Retirar del Carrito
+                    <X className={`mr-3 h-6 w-6 transition-transform duration-300 relative z-10 ${
+                      isCartHovered ? 'rotate-90 scale-125' : ''
+                    }`} />
+                    <span className="relative z-10 text-lg">Retirar del Carrito</span>
                   </>
                 ) : (
                   <>
-                    <Plus className="mr-2 h-5 w-5" />
-                    Agregar al Carrito
+                    <Plus className={`mr-3 h-6 w-6 transition-transform duration-300 relative z-10 ${
+                      isCartHovered ? 'rotate-180 scale-125' : ''
+                    }`} />
+                    <span className="relative z-10 text-lg">Agregar al Carrito</span>
                   </>
                 )}
-              </button>
+                </button>
+                
+                {/* Success indicator */}
+                {inCart && (
+                  <div className="absolute -top-2 -right-2 bg-gradient-to-r from-green-400 to-emerald-400 text-white p-2 rounded-full animate-bounce shadow-lg">
+                    <Star className="h-4 w-4" />
+                  </div>
+                )}
+              </div>
+
+
+
+              </div>
 
               {/* Price Card */}
               <div className="mb-6">
@@ -294,11 +339,12 @@ export function MovieDetail() {
                   isAnime={isAnime}
                 />
               </div>
+
               <div className="space-y-6">
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-blue-200 transition-colors">
                   <div className="flex items-center mb-2">
-                    <div className="bg-blue-100 p-2 rounded-lg mr-3 shadow-sm animate-pulse">
-                      <span className="text-sm">🎬</span>
+                    <div className="bg-blue-100 p-2 rounded-lg mr-3 shadow-sm">
+                      <Film className="h-4 w-4 text-blue-600" />
                     </div>
                     <h3 className="font-semibold text-gray-900">Estado</h3>
                   </div>
@@ -307,8 +353,8 @@ export function MovieDetail() {
                 
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-purple-200 transition-colors">
                   <div className="flex items-center mb-2">
-                    <div className="bg-purple-100 p-2 rounded-lg mr-3 shadow-sm animate-bounce">
-                      <span className="text-sm">🌐</span>
+                    <div className="bg-purple-100 p-2 rounded-lg mr-3 shadow-sm">
+                      <Globe className="h-4 w-4 text-purple-600" />
                     </div>
                     <h3 className="font-semibold text-gray-900">Idioma Original</h3>
                   </div>
@@ -317,8 +363,8 @@ export function MovieDetail() {
                 
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-green-200 transition-colors">
                   <div className="flex items-center mb-2">
-                    <div className="bg-green-100 p-2 rounded-lg mr-3 shadow-sm animate-pulse">
-                      <span className="text-sm">💵</span>
+                    <div className="bg-green-100 p-2 rounded-lg mr-3 shadow-sm">
+                      <DollarSign className="h-4 w-4 text-green-600" />
                     </div>
                     <h3 className="font-semibold text-gray-900">Presupuesto</h3>
                   </div>
@@ -332,8 +378,8 @@ export function MovieDetail() {
                 
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-yellow-200 transition-colors">
                   <div className="flex items-center mb-2">
-                    <div className="bg-yellow-100 p-2 rounded-lg mr-3 shadow-sm animate-bounce">
-                      <span className="text-sm">💰</span>
+                    <div className="bg-yellow-100 p-2 rounded-lg mr-3 shadow-sm">
+                      <TrendingUp className="h-4 w-4 text-yellow-600" />
                     </div>
                     <h3 className="font-semibold text-gray-900">Recaudación</h3>
                   </div>
@@ -342,13 +388,10 @@ export function MovieDetail() {
                       ? `$${movie.revenue.toLocaleString()}`
                       : 'No disponible'
                     }
-                  </p>
-                </div>
-
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-pink-200 transition-colors">
                   <div className="flex items-center mb-2">
-                    <div className="bg-pink-100 p-2 rounded-lg mr-3 shadow-sm animate-pulse">
-                      <span className="text-sm">🗳️</span>
+                    <div className="bg-pink-100 p-2 rounded-lg mr-3 shadow-sm">
+                      <Users className="h-4 w-4 text-pink-600" />
                     </div>
                     <h3 className="font-semibold text-gray-900">Votos</h3>
                   </div>
@@ -356,12 +399,12 @@ export function MovieDetail() {
                     {movie.vote_count.toLocaleString()} votos
                   </p>
                 </div>
-
+                  </p>
                 {movie.production_companies.length > 0 && (
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-indigo-200 transition-colors">
                     <div className="flex items-center mb-3">
-                      <div className="bg-indigo-100 p-2 rounded-lg mr-3 shadow-sm animate-pulse">
-                        <span className="text-sm">🏭</span>
+                      <div className="bg-indigo-100 p-2 rounded-lg mr-3 shadow-sm">
+                        <Building className="h-4 w-4 text-indigo-600" />
                       </div>
                       <h3 className="font-semibold text-gray-900">Productoras</h3>
                     </div>
@@ -376,12 +419,12 @@ export function MovieDetail() {
                     </div>
                   </div>
                 )}
-
+                </div>
                 {movie.production_countries.length > 0 && (
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:border-orange-200 transition-colors">
                     <div className="flex items-center mb-3">
-                      <div className="bg-orange-100 p-2 rounded-lg mr-3 shadow-sm animate-bounce">
-                        <span className="text-sm">🌍</span>
+                      <div className="bg-orange-100 p-2 rounded-lg mr-3 shadow-sm">
+                        <Globe className="h-4 w-4 text-orange-600" />
                       </div>
                       <h3 className="font-semibold text-gray-900">Países</h3>
                     </div>
@@ -397,11 +440,9 @@ export function MovieDetail() {
                   </div>
                 )}
               </div>
-              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
   );
 }
