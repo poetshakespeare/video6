@@ -12,7 +12,8 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
     total,
     cashTotal = 0,
     transferTotal = 0,
-    isPickup = false
+    pickupLocation = false,
+    showLocationMap = false
   } = orderData;
 
   // Obtener el porcentaje de transferencia actual del contexto admin
@@ -38,6 +39,7 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
         return {
           moviePrice: state.prices?.moviePrice || 80,
           seriesPrice: state.prices?.seriesPrice || 300,
+          novelPricePerChapter: state.prices?.novelPricePerChapter || 5,
           transferFeePercentage: state.prices?.transferFeePercentage || 10
         };
       }
@@ -47,24 +49,54 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
     return {
       moviePrice: 80,
       seriesPrice: 300,
+      novelPricePerChapter: 5,
       transferFeePercentage: 10
     };
   };
 
   const currentPrices = getCurrentPrices();
   const transferFeePercentage = currentPrices.transferFeePercentage;
-  // Formatear lista de productos
+  
+  // Formatear lista de productos con desglose detallado de métodos de pago
   const itemsList = items
     .map(item => {
-      const seasonInfo = item.selectedSeasons && item.selectedSeasons.length > 0 
+      const seasonInfo = item.type === 'tv' && item.selectedSeasons && item.selectedSeasons.length > 0 
         ? `\n  📺 Temporadas: ${item.selectedSeasons.sort((a, b) => a - b).join(', ')}` 
         : '';
-      const itemType = item.type === 'movie' ? 'Película' : 'Serie';
-      const basePrice = item.type === 'movie' ? currentPrices.moviePrice : (item.selectedSeasons?.length || 1) * currentPrices.seriesPrice;
+      
+      const novelInfo = item.type === 'novel' 
+        ? `\n  📚 Capítulos: ${item.chapters}\n  📖 Género: ${item.genre}` 
+        : '';
+      
+      const itemType = item.type === 'movie' ? 'Película' : item.type === 'tv' ? 'Serie' : 'Novela';
+      
+      let basePrice: number;
+      if (item.type === 'novel') {
+        basePrice = item.chapters * currentPrices.novelPricePerChapter;
+      } else if (item.type === 'movie') {
+        basePrice = currentPrices.moviePrice;
+      } else {
+        basePrice = (item.selectedSeasons?.length || 1) * currentPrices.seriesPrice;
+      }
+      
       const finalPrice = item.paymentType === 'transfer' ? Math.round(basePrice * (1 + transferFeePercentage / 100)) : basePrice;
       const paymentTypeText = item.paymentType === 'transfer' ? `Transferencia (+${transferFeePercentage}%)` : 'Efectivo';
-      const emoji = item.type === 'movie' ? '🎬' : '📺';
-      return `${emoji} *${item.title}*${seasonInfo}\n  📋 Tipo: ${itemType}\n  💳 Pago: ${paymentTypeText}\n  💰 Precio: $${finalPrice.toLocaleString()} CUP`;
+      const emoji = item.type === 'movie' ? '🎬' : item.type === 'tv' ? '📺' : '📚';
+      
+      let itemText = `${emoji} *${item.title}*${seasonInfo}${novelInfo}\n`;
+      itemText += `  📋 Tipo: ${itemType}\n`;
+      itemText += `  💳 Método de pago: ${paymentTypeText}\n`;
+      
+      if (item.paymentType === 'transfer') {
+        const recargo = finalPrice - basePrice;
+        itemText += `  💰 Precio base: $${basePrice.toLocaleString()} CUP\n`;
+        itemText += `  💳 Recargo transferencia (${transferFeePercentage}%): +$${recargo.toLocaleString()} CUP\n`;
+        itemText += `  💰 Precio final: $${finalPrice.toLocaleString()} CUP`;
+      } else {
+        itemText += `  💰 Precio: $${finalPrice.toLocaleString()} CUP`;
+      }
+      
+      return itemText;
     })
     .join('\n\n');
 
@@ -75,66 +107,60 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
   message += `👤 *DATOS DEL CLIENTE:*\n`;
   message += `• Nombre: ${customerInfo.fullName}\n`;
   message += `• Teléfono: ${customerInfo.phone}\n`;
-  if (!isPickup) {
+  if (!pickupLocation && customerInfo.address) {
     message += `• Dirección: ${customerInfo.address}\n`;
   }
   message += `\n`;
   
   message += `🎯 *PRODUCTOS SOLICITADOS:*\n${itemsList}\n\n`;
   
-  // Desglose detallado por método de pago
-  message += `💳 *DESGLOSE POR MÉTODO DE PAGO:*\n`;
-  
-  items.forEach(item => {
-    const basePrice = item.type === 'movie' ? currentPrices.moviePrice : (item.selectedSeasons?.length || 1) * currentPrices.seriesPrice;
-    const finalPrice = item.paymentType === 'transfer' ? Math.round(basePrice * (1 + transferFeePercentage / 100)) : basePrice;
-    const emoji = item.type === 'movie' ? '🎬' : '📺';
-    const paymentIcon = item.paymentType === 'transfer' ? '🏦' : '💵';
-    const paymentText = item.paymentType === 'transfer' ? `Transferencia (+${transferFeePercentage}%)` : 'Efectivo';
-    
-    message += `${emoji} *${item.title}*\n`;
-    if (item.selectedSeasons && item.selectedSeasons.length > 0) {
-      message += `  📺 Temporadas: ${item.selectedSeasons.sort((a, b) => a - b).join(', ')}\n`;
-    }
-    message += `  ${paymentIcon} Método: ${paymentText}\n`;
-    if (item.paymentType === 'transfer') {
-      message += `  💰 Precio base: $${basePrice.toLocaleString()} CUP\n`;
-      message += `  💳 Recargo (${transferFeePercentage}%): +$${(finalPrice - basePrice).toLocaleString()} CUP\n`;
-    }
-    message += `  💰 Precio final: $${finalPrice.toLocaleString()} CUP\n\n`;
-  });
-  
-  message += `💰 *RESUMEN DE COSTOS:*\n`;
-  
   // Desglosar por tipo de pago
   const cashItems = items.filter(item => item.paymentType === 'cash');
   const transferItems = items.filter(item => item.paymentType === 'transfer');
   
   // Mostrar desglose detallado por tipo de pago
-  message += `\n📊 *DESGLOSE POR TIPO DE PAGO:*\n`;
+  message += `📊 *DESGLOSE DETALLADO POR MÉTODO DE PAGO:*\n`;
   
   if (cashItems.length > 0) {
-    message += `💵 *EFECTIVO:*\n`;
+    message += `💵 *PAGO EN EFECTIVO:*\n`;
     cashItems.forEach(item => {
-      const basePrice = item.type === 'movie' ? currentPrices.moviePrice : (item.selectedSeasons?.length || 1) * currentPrices.seriesPrice;
-      const emoji = item.type === 'movie' ? '🎬' : '📺';
+      let basePrice: number;
+      if (item.type === 'novel') {
+        basePrice = item.chapters * currentPrices.novelPricePerChapter;
+      } else if (item.type === 'movie') {
+        basePrice = currentPrices.moviePrice;
+      } else {
+        basePrice = (item.selectedSeasons?.length || 1) * currentPrices.seriesPrice;
+      }
+      const emoji = item.type === 'movie' ? '🎬' : item.type === 'tv' ? '📺' : '📚';
       message += `  ${emoji} ${item.title}: $${basePrice.toLocaleString()} CUP\n`;
     });
     message += `  💰 *Subtotal Efectivo: $${cashTotal.toLocaleString()} CUP*\n\n`;
   }
   
   if (transferItems.length > 0) {
-    message += `🏦 *TRANSFERENCIA (+${transferFeePercentage}%):*\n`;
+    message += `🏦 *PAGO POR TRANSFERENCIA BANCARIA (+${transferFeePercentage}%):*\n`;
     transferItems.forEach(item => {
-      const basePrice = item.type === 'movie' ? currentPrices.moviePrice : (item.selectedSeasons?.length || 1) * currentPrices.seriesPrice;
+      let basePrice: number;
+      if (item.type === 'novel') {
+        basePrice = item.chapters * currentPrices.novelPricePerChapter;
+      } else if (item.type === 'movie') {
+        basePrice = currentPrices.moviePrice;
+      } else {
+        basePrice = (item.selectedSeasons?.length || 1) * currentPrices.seriesPrice;
+      }
       const finalPrice = Math.round(basePrice * (1 + transferFeePercentage / 100));
-      const emoji = item.type === 'movie' ? '🎬' : '📺';
-      message += `  ${emoji} ${item.title}: $${basePrice.toLocaleString()} → $${finalPrice.toLocaleString()} CUP\n`;
+      const recargo = finalPrice - basePrice;
+      const emoji = item.type === 'movie' ? '🎬' : item.type === 'tv' ? '📺' : '📚';
+      message += `  ${emoji} ${item.title}:\n`;
+      message += `    💰 Base: $${basePrice.toLocaleString()} CUP\n`;
+      message += `    💳 Recargo (${transferFeePercentage}%): +$${recargo.toLocaleString()} CUP\n`;
+      message += `    💰 Total: $${finalPrice.toLocaleString()} CUP\n`;
     });
     message += `  💰 *Subtotal Transferencia: $${transferTotal.toLocaleString()} CUP*\n\n`;
   }
   
-  message += `📋 *RESUMEN FINAL:*\n`;
+  message += `📋 *RESUMEN FINAL DE PAGOS:*\n`;
   if (cashTotal > 0) {
     message += `• Efectivo: $${cashTotal.toLocaleString()} CUP (${cashItems.length} elementos)\n`;
   }
@@ -147,42 +173,46 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
     message += `• Recargo transferencia (${transferFeePercentage}%): +$${transferFee.toLocaleString()} CUP\n`;
   }
   
-  if (isPickup) {
-    message += `🏠 Recogida en local: GRATIS\n`;
+  // Información de entrega
+  message += `\n📍 *INFORMACIÓN DE ENTREGA:*\n`;
+  if (pickupLocation) {
+    message += `🏪 *RECOGIDA EN EL LOCAL:*\n`;
+    message += `• Ubicación: TV a la Carta\n`;
+    message += `• Dirección: Reparto Nuevo Vista Alegre, Santiago de Cuba\n`;
+    message += `• Costo: GRATIS\n`;
+    
+    if (showLocationMap) {
+      message += `• 📍 Coordenadas GPS: 20.039585, -75.849663\n`;
+      message += `• 🗺️ Google Maps: https://www.google.com/maps/place/20%C2%B002'22.5%22N+75%C2%B050'58.8%22W/@20.0394604,-75.8495414,180m/data=!3m1!1e3!4m4!3m3!8m2!3d20.039585!4d-75.849663?entry=ttu&g_ep=EgoyMDI1MDczMC4wIKXMDSoASAFQAw%3D%3D\n`;
+    }
   } else {
-    const zoneName = deliveryZone.includes(' > ') ? deliveryZone.split(' > ')[2] : deliveryZone;
-    message += `🚚 Entrega (${zoneName}): +$${deliveryCost.toLocaleString()} CUP\n`;
+    message += `🚚 *ENTREGA A DOMICILIO:*\n`;
+    message += `• Zona: ${deliveryZone.replace(' > ', ' → ')}\n`;
+    if (customerInfo.address) {
+      message += `• Dirección: ${customerInfo.address}\n`;
+    }
+    message += `• Costo de entrega: $${deliveryCost.toLocaleString()} CUP\n`;
   }
-  message += `\n🎯 *TOTAL FINAL: $${total.toLocaleString()} CUP*\n\n`;
   
-  if (isPickup) {
-    message += `📍 *RECOGIDA EN LOCAL:*\n`;
-    message += `🏠 TV a la Carta\n`;
-    message += `📍 Reparto Nuevo Vista Alegre, Santiago de Cuba\n`;
-    message += `🗺️ Coordenadas: 20.039585, -75.849663\n`;
-    message += `🌐 Google Maps: https://www.google.com/maps/place/20%C2%B002'22.5%22N+75%C2%B050'58.8%22W/@20.0394604,-75.8495414,180m/data=!3m1!1e3!4m4!3m3!8m2!3d20.039585!4d-75.849663\n`;
-    message += `💰 Costo de recogida: GRATIS\n\n`;
-  } else {
-    message += `📍 *ZONA DE ENTREGA:*\n`;
-    message += `${deliveryZone.replace(' > ', ' → ')}\n`;
-    message += `💰 Costo de entrega: $${deliveryCost.toLocaleString()} CUP\n\n`;
-  }
+  message += `\n🎯 *TOTAL FINAL: $${total.toLocaleString()} CUP*\n\n`;
   
   message += `📊 *ESTADÍSTICAS DEL PEDIDO:*\n`;
   message += `• Total de elementos: ${items.length}\n`;
   message += `• Películas: ${items.filter(item => item.type === 'movie').length}\n`;
   message += `• Series: ${items.filter(item => item.type === 'tv').length}\n`;
+  message += `• Novelas: ${items.filter(item => item.type === 'novel').length}\n`;
   if (cashItems.length > 0) {
     message += `• Pago en efectivo: ${cashItems.length} elementos\n`;
   }
   if (transferItems.length > 0) {
     message += `• Pago por transferencia: ${transferItems.length} elementos\n`;
   }
-  message += `\n`;
+  message += `• Tipo de entrega: ${pickupLocation ? 'Recogida en local' : 'Entrega a domicilio'}\n\n`;
   
   message += `💼 *CONFIGURACIÓN DE PRECIOS APLICADA:*\n`;
   message += `• Películas: $${currentPrices.moviePrice.toLocaleString()} CUP\n`;
   message += `• Series: $${currentPrices.seriesPrice.toLocaleString()} CUP por temporada\n`;
+  message += `• Novelas: $${currentPrices.novelPricePerChapter.toLocaleString()} CUP por capítulo\n`;
   message += `• Recargo transferencia: ${transferFeePercentage}%\n\n`;
   
   message += `📱 *Enviado desde:* TV a la Carta App\n`;
@@ -194,14 +224,6 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
     minute: '2-digit',
     second: '2-digit'
   })}\n`;
-  
-  if (isPickup) {
-    message += `\n📋 *INSTRUCCIONES PARA RECOGIDA:*\n`;
-    message += `• Contactar al llegar al local\n`;
-    message += `• Presentar este pedido (ID: ${orderId})\n`;
-    message += `• Horario de atención: Consultar disponibilidad\n`;
-  }
-  
   message += `🌟 *¡Gracias por elegir TV a la Carta!*`;
   
   const encodedMessage = encodeURIComponent(message);

@@ -1,12 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Trash2, Star, Calendar, MessageCircle, ArrowLeft, Edit3, Tv, DollarSign, CreditCard, Calculator, Sparkles, Zap, Heart, Check, X } from 'lucide-react';
+import { ShoppingCart, Trash2, Star, Calendar, MessageCircle, ArrowLeft, Edit3, Monitor, DollarSign, CreditCard, Calculator, Sparkles, Zap, Heart, Check, X, Clapperboard, Send, BookOpen } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { AdminContext } from '../context/AdminContext';
 import { PriceCard } from '../components/PriceCard';
 import { CheckoutModal, OrderData, CustomerInfo } from '../components/CheckoutModal';
 import { sendOrderToWhatsApp } from '../utils/whatsapp';
 import { IMAGE_BASE_URL, POSTER_SIZE } from '../config/api';
+import type { NovelCartItem } from '../types/movie';
 
 export function Cart() {
   const { state, removeItem, clearCart, updatePaymentType, calculateItemPrice, calculateTotalPrice, calculateTotalByPaymentType } = useCart();
@@ -36,21 +37,28 @@ export function Cart() {
   };
 
   const getItemUrl = (item: any) => {
+    if (item.type === 'novel') return '#';
     return `/${item.type}/${item.id}`;
   };
 
   const getItemYear = (item: any) => {
+    if (item.type === 'novel') return item.year;
     const date = item.release_date || item.first_air_date;
     return date ? new Date(date).getFullYear() : 'N/A';
   };
 
   const getPosterUrl = (posterPath: string | null) => {
+    // Para novelas, usar una imagen por defecto
+    if (!posterPath) {
+      return 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=500&h=750&fit=crop&crop=center';
+    }
     return posterPath
       ? `${IMAGE_BASE_URL}/${POSTER_SIZE}${posterPath}`
       : 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=500&h=750&fit=crop&crop=center';
   };
 
   const isAnime = (item: any) => {
+    if (item.type === 'novel') return false;
     return item.original_language === 'ja' || 
            (item.genre_ids && item.genre_ids.includes(16)) ||
            item.title?.toLowerCase().includes('anime');
@@ -60,6 +68,7 @@ export function Cart() {
   const totalsByPaymentType = calculateTotalByPaymentType();
   const movieCount = state.items.filter(item => item.type === 'movie').length;
   const seriesCount = state.items.filter(item => item.type === 'tv').length;
+  const novelCount = state.items.filter(item => item.type === 'novel').length;
   const animeCount = state.items.filter(item => isAnime(item)).length;
 
   if (state.items.length === 0) {
@@ -134,55 +143,90 @@ export function Cart() {
               >
                 Vaciar carrito
               </button>
+              <Link
+                to="/"
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors text-center"
+              >
+                Ver Novelas
+              </Link>
             </div>
           </div>
 
           <div className="divide-y divide-gray-200">
             {state.items.map((item) => (
-              <div key={`${item.type}-${item.id}`} className="p-6 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all duration-300 border-l-4 border-transparent hover:border-blue-400">
+              <div key={`${item.type}-${item.id}`} className={`p-6 hover:bg-gradient-to-r transition-all duration-300 border-l-4 border-transparent ${
+                item.type === 'novel' 
+                  ? 'hover:from-pink-50 hover:to-purple-50 hover:border-pink-400' 
+                  : 'hover:from-blue-50 hover:to-purple-50 hover:border-blue-400'
+              }`}>
                 <div className="flex flex-col sm:flex-row sm:items-start space-y-4 sm:space-y-0 sm:space-x-4">
                   {/* Poster */}
-                  <Link to={getItemUrl(item)} className="flex-shrink-0 mx-auto sm:mx-0">
+                  {item.type === 'novel' ? (
+                    <div className="flex-shrink-0 mx-auto sm:mx-0">
+                      <div className="w-24 h-36 sm:w-20 sm:h-28 bg-gradient-to-br from-pink-400 to-purple-500 rounded-xl shadow-lg flex items-center justify-center border-2 border-white">
+                        <BookOpen className="h-8 w-8 text-white" />
+                      </div>
+                    </div>
+                  ) : (
+                    <Link to={getItemUrl(item)} className="flex-shrink-0 mx-auto sm:mx-0">
                     <img
                       src={getPosterUrl(item.poster_path)}
                       alt={item.title}
                       className="w-24 h-36 sm:w-20 sm:h-28 object-cover rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border-2 border-white"
                     />
-                  </Link>
+                    </Link>
+                  )}
 
                   {/* Content */}
                   <div className="flex-1 min-w-0 text-center sm:text-left">
 
-                    <Link
-                      to={getItemUrl(item)}
-                      className="block hover:text-blue-600 transition-colors mb-3"
-                    >
+                    {item.type === 'novel' ? (
                       <h3 className="text-lg sm:text-xl font-bold text-gray-900 break-words hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-600 transition-all duration-300">
                         {item.title}
                       </h3>
-                    </Link>
+                    ) : (
+                      <Link
+                        to={getItemUrl(item)}
+                        className="block hover:text-blue-600 transition-colors mb-3"
+                      >
+                        <h3 className="text-lg sm:text-xl font-bold text-gray-900 break-words hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-600 transition-all duration-300">
+                          {item.title}
+                        </h3>
+                      </Link>
+                    )}
                     
-                    {item.type === 'tv' && item.selectedSeasons && item.selectedSeasons.length > 0 && (
+                    {item.type === 'tv' && 'selectedSeasons' in item && item.selectedSeasons && item.selectedSeasons.length > 0 && (
                       <div className="mb-3">
                         <span className="inline-block bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 px-4 py-2 rounded-full text-sm font-semibold border border-purple-200 shadow-sm">
-                          <Tv className="h-4 w-4 inline mr-2" />
+                          <Monitor className="h-4 w-4 inline mr-2" />
                           Temporadas: {item.selectedSeasons.sort((a, b) => a - b).join(', ')}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {item.type === 'novel' && (
+                      <div className="mb-3">
+                        <span className="inline-block bg-gradient-to-r from-pink-100 to-purple-100 text-pink-700 px-4 py-2 rounded-full text-sm font-semibold border border-pink-200 shadow-sm">
+                          <BookOpen className="h-4 w-4 inline mr-2" />
+                          {(item as NovelCartItem).chapters} capítulos • {(item as NovelCartItem).genre}
                         </span>
                       </div>
                     )}
                     
                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 mt-3 text-sm text-gray-600">
                       <span className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 px-3 py-2 rounded-full text-xs font-semibold border border-blue-200 shadow-sm">
-                        {item.type === 'movie' ? 'Película' : 'Serie'}
+                        {item.type === 'movie' ? 'Película' : item.type === 'tv' ? 'Serie' : 'Novela'}
                       </span>
                       <div className="inline-flex items-center bg-gray-50 px-3 py-2 rounded-full border border-gray-200">
                         <Calendar className="h-4 w-4 mr-1" />
                         <span>{getItemYear(item)}</span>
                       </div>
-                      <div className="inline-flex items-center bg-yellow-50 px-3 py-2 rounded-full border border-yellow-200">
-                        <Star className="h-4 w-4 mr-1 fill-yellow-400 text-yellow-400" />
-                        <span>{item.vote_average ? item.vote_average.toFixed(1) : 'N/A'}</span>
-                      </div>
+                      {item.type !== 'novel' && (
+                        <div className="inline-flex items-center bg-yellow-50 px-3 py-2 rounded-full border border-yellow-200">
+                          <Star className="h-4 w-4 mr-1 fill-yellow-400 text-yellow-400" />
+                          <span>{item.vote_average ? item.vote_average.toFixed(1) : 'N/A'}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Modern Payment Type Selection */}
@@ -263,7 +307,7 @@ export function Cart() {
 
                     {/* Action Buttons */}
                     <div className="flex items-center justify-center space-x-2">
-                      {item.type === 'tv' && (
+                      {item.type === 'tv' && 'selectedSeasons' in item && (
                         <Link
                           to={getItemUrl(item)}
                           className="p-3 text-purple-600 hover:text-white hover:bg-gradient-to-r hover:from-purple-500 hover:to-pink-500 bg-purple-50 rounded-xl transition-all duration-300 transform hover:scale-110 shadow-md hover:shadow-lg"
@@ -362,15 +406,26 @@ export function Cart() {
               <div className="space-y-3 max-h-64 overflow-y-auto">
                 {state.items.map((item) => {
                   const itemPrice = calculateItemPrice(item);
-                  const basePrice = item.type === 'movie' ? 80 : (item.selectedSeasons?.length || 1) * 300;
+                  let basePrice: number;
+                  if (item.type === 'novel') {
+                    const novelItem = item as NovelCartItem;
+                    basePrice = novelItem.chapters * novelItem.pricePerChapter;
+                  } else if (item.type === 'movie') {
+                    basePrice = 80;
+                  } else {
+                    basePrice = ('selectedSeasons' in item ? item.selectedSeasons?.length || 1 : 1) * 300;
+                  }
                   return (
                     <div key={`${item.type}-${item.id}`} className="bg-white rounded-lg p-3 border border-gray-200">
                       <div className="flex-1">
                         <p className="font-medium text-gray-900 text-sm mb-1 break-words">{item.title}</p>
                         <p className="text-xs text-gray-600">
-                          {item.type === 'movie' ? 'Película' : 'Serie'}
-                          {item.selectedSeasons && item.selectedSeasons.length > 0 && 
+                          {item.type === 'movie' ? 'Película' : item.type === 'tv' ? 'Serie' : 'Novela'}
+                          {'selectedSeasons' in item && item.selectedSeasons && item.selectedSeasons.length > 0 && 
                             ` • Temporadas: ${item.selectedSeasons.sort((a, b) => a - b).join(', ')}`
+                          }
+                          {item.type === 'novel' && 
+                            ` • ${(item as NovelCartItem).chapters} capítulos • ${(item as NovelCartItem).genre}`
                           }
                           {isAnime(item) && ' • Anime'}
                         </p>
@@ -393,9 +448,14 @@ export function Cart() {
                             Base: ${basePrice.toLocaleString()} CUP
                           </p>
                         )}
-                        {item.type === 'tv' && item.selectedSeasons && item.selectedSeasons.length > 0 && (
+                        {item.type === 'tv' && 'selectedSeasons' in item && item.selectedSeasons && item.selectedSeasons.length > 0 && (
                           <p className="text-xs text-gray-500">
                             ${Math.round(itemPrice / item.selectedSeasons.length).toLocaleString()} CUP/temp.
+                          </p>
+                        )}
+                        {item.type === 'novel' && (
+                          <p className="text-xs text-gray-500">
+                            ${(item as NovelCartItem).pricePerChapter.toLocaleString()} CUP/cap.
                           </p>
                         )}
                       </div>
@@ -422,7 +482,7 @@ export function Cart() {
                     </p>
                   </div>
                   <div className="bg-blue-100 p-3 rounded-lg mx-auto sm:mx-0 mt-2 sm:mt-0 w-fit">
-                    <span className="text-2xl">🎬</span>
+                    <Clapperboard className="h-6 w-6 text-blue-600" />
                   </div>
                 </div>
               </div>
@@ -436,7 +496,7 @@ export function Cart() {
                     </p>
                   </div>
                   <div className="bg-purple-100 p-3 rounded-lg mx-auto sm:mx-0 mt-2 sm:mt-0 w-fit">
-                    <span className="text-2xl">📺</span>
+                    <Monitor className="h-6 w-6 text-purple-600" />
                   </div>
                 </div>
               </div>
@@ -444,11 +504,11 @@ export function Cart() {
               <div className="bg-pink-50 rounded-xl p-4 border border-pink-100">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between text-center sm:text-left">
                   <div>
-                    <p className="text-sm font-medium text-pink-600 mb-1">Anime</p>
-                    <p className="text-2xl font-bold text-pink-800">{animeCount}</p>
+                    <p className="text-sm font-medium text-pink-600 mb-1">Novelas</p>
+                    <p className="text-2xl font-bold text-pink-800">{novelCount}</p>
                   </div>
                   <div className="bg-pink-100 p-3 rounded-lg mx-auto sm:mx-0 mt-2 sm:mt-0 w-fit">
-                    <span className="text-2xl">🎌</span>
+                    <BookOpen className="h-6 w-6 text-pink-600" />
                   </div>
                 </div>
               </div>
@@ -458,23 +518,28 @@ export function Cart() {
             <div className="bg-gray-50 rounded-xl p-4 mb-6">
               <h4 className="font-semibold text-gray-900 mb-3 text-center sm:text-left">Estadísticas del Pedido</h4>
               <div className="space-y-2">
-                <div className="flex flex-col sm:flex-row justify-between items-center space-y-1 sm:space-y-0">
-                  <span className="text-gray-600">Promedio de calificación:</span>
-                  <div className="flex items-center">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-                    <span className="font-medium">
-                      {state.items.length > 0 
-                        ? (state.items.reduce((acc, item) => acc + item.vote_average, 0) / state.items.length).toFixed(1)
-                        : '0.0'
-                      }
-                    </span>
+                {state.items.filter(item => item.type !== 'novel').length > 0 && (
+                  <div className="flex flex-col sm:flex-row justify-between items-center space-y-1 sm:space-y-0">
+                    <span className="text-gray-600">Promedio de calificación (películas/series):</span>
+                    <div className="flex items-center">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
+                      <span className="font-medium">
+                        {(() => {
+                          const ratedItems = state.items.filter(item => item.type !== 'novel' && item.vote_average);
+                          return ratedItems.length > 0 
+                            ? (ratedItems.reduce((acc, item) => acc + item.vote_average, 0) / ratedItems.length).toFixed(1)
+                            : '0.0';
+                        })()}
+                      </span>
+                    </div>
                   </div>
-                </div>
+                )}
                 <div className="flex flex-col sm:flex-row justify-between items-center space-y-1 sm:space-y-0">
                   <span className="text-gray-600">Contenido más reciente:</span>
                   <span className="font-medium">
                     {state.items.length > 0 
                       ? Math.max(...state.items.map(item => {
+                          if (item.type === 'novel') return (item as NovelCartItem).year;
                           const date = item.release_date || item.first_air_date;
                           return date ? new Date(date).getFullYear() : 0;
                         }))
@@ -490,14 +555,14 @@ export function Cart() {
               onClick={() => setShowCheckoutModal(true)}
               className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center transform hover:scale-105 hover:shadow-lg touch-manipulation"
             >
-              <MessageCircle className="mr-3 h-6 w-6" />
-              Finalizar Compra
+              <Send className="mr-3 h-6 w-6" />
+              Finalizar Pedido
             </button>
             
             <div className="mt-4 p-4 bg-green-50 rounded-xl border border-green-100">
               <p className="text-sm text-green-700 text-center flex items-center justify-center">
                 <span className="mr-2">📱</span>
-                Complete sus datos para enviar el pedido por WhatsApp
+                Complete sus datos para finalizar el pedido
               </p>
             </div>
           </div>
@@ -508,12 +573,30 @@ export function Cart() {
           isOpen={showCheckoutModal}
           onClose={() => setShowCheckoutModal(false)}
           onCheckout={handleCheckout}
-          items={state.items.map(item => ({
-            id: item.id,
-            title: item.title,
-            price: calculateItemPrice(item),
-            quantity: 1
-          }))}
+          items={state.items.map(item => {
+            if (item.type === 'novel') {
+              const novelItem = item as NovelCartItem;
+              return {
+                id: item.id,
+                title: item.title,
+                price: calculateItemPrice(item),
+                quantity: 1,
+                type: 'novel',
+                chapters: novelItem.chapters,
+                genre: novelItem.genre,
+                paymentType: item.paymentType
+              };
+            }
+            return {
+              id: item.id,
+              title: item.title,
+              price: calculateItemPrice(item),
+              quantity: 1,
+              type: item.type,
+              selectedSeasons: 'selectedSeasons' in item ? item.selectedSeasons : undefined,
+              paymentType: item.paymentType
+            };
+          })}
           total={totalPrice}
         />
       </div>

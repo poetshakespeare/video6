@@ -4,15 +4,263 @@ import JSZip from 'jszip';
 // CONFIGURACIÓN EMBEBIDA - Generada automáticamente
 const EMBEDDED_CONFIG = {
   "version": "2.1.0",
-  "lastExport": "2025-01-31T10:33:00.000Z",
+  "lastExport": "2025-09-05T08:44:06.529Z",
   "prices": {
     "moviePrice": 80,
     "seriesPrice": 300,
     "transferFeePercentage": 10,
     "novelPricePerChapter": 5
   },
-  "deliveryZones": [],
-  "novels": [],
+  "deliveryZones": [
+    {
+      "id": 1,
+      "name": "Santiago de Cuba > Vista Hermosa",
+      "cost": 400,
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-09-17T09:20:53.160Z"
+    },
+    {
+      "id": 2,
+      "name": "Santiago de Cuba > Antonio Maceo",
+      "cost": 400,
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-09-17T09:21:05.888Z"
+    },
+    {
+      "id": 3,
+      "name": "Santiago de Cuba > Centro de la ciudad",
+      "cost": 250,
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-09-17T09:21:30.455Z"
+    },
+    {
+      "name": "Santiago de Cuba > Versalles Hasta el Hotel",
+      "cost": 500,
+      "id": 1758100929096,
+      "createdAt": "2025-09-17T09:22:09.096Z",
+      "updatedAt": "2025-09-17T09:22:09.096Z"
+    },
+    {
+      "name": "Santiago de Cuba > Carretera del Morro",
+      "cost": 300,
+      "id": 1758100944200,
+      "createdAt": "2025-09-17T09:22:24.200Z",
+      "updatedAt": "2025-09-17T09:22:24.200Z"
+    },
+    {
+      "name": "Santiago de Cuba > Altamira",
+      "cost": 400,
+      "id": 1758100965751,
+      "createdAt": "2025-09-17T09:22:45.751Z",
+      "updatedAt": "2025-09-17T09:22:45.751Z"
+    },
+    {
+      "name": "Santiago de Cuba > Cangrejitos",
+      "cost": 350,
+      "id": 1758100993856,
+      "createdAt": "2025-09-17T09:23:13.856Z",
+      "updatedAt": "2025-09-17T09:23:13.856Z"
+    },
+    {
+      "name": "Santiago de Cuba > Trocha",
+      "cost": 250,
+      "id": 1758101017063,
+      "createdAt": "2025-09-17T09:23:37.063Z",
+      "updatedAt": "2025-09-17T09:23:37.063Z"
+    },
+    {
+      "name": "Santiago de Cuba > Veguita de Galo",
+      "cost": 300,
+      "id": 1758101035400,
+      "createdAt": "2025-09-17T09:23:55.400Z",
+      "updatedAt": "2025-09-17T09:23:55.400Z"
+    },
+    {
+      "name": "Santiago de Cuba > Plaza de Martes",
+      "cost": 250,
+      "id": 1758101052903,
+      "createdAt": "2025-09-17T09:24:12.903Z",
+      "updatedAt": "2025-09-17T09:24:12.903Z"
+    },
+    {
+      "name": "Santiago de Cuba > Portuondo",
+      "cost": 300,
+      "id": 1758101091183,
+      "createdAt": "2025-09-17T09:24:51.183Z",
+      "updatedAt": "2025-09-17T09:24:51.183Z"
+    },
+    {
+      "name": "Santiago de Cuba > Sta Barbara",
+      "cost": 300,
+      "id": 1758101134159,
+      "createdAt": "2025-09-17T09:25:34.159Z",
+      "updatedAt": "2025-09-17T09:25:34.159Z"
+    },
+    {
+      "name": "Santiago de Cuba > Sueño",
+      "cost": 250,
+      "id": 1758101147999,
+      "createdAt": "2025-09-17T09:25:47.999Z",
+      "updatedAt": "2025-09-17T09:25:47.999Z"
+    },
+    {
+      "name": "Santiago de Cuba > San Pedrito",
+      "cost": 150,
+      "id": 1758101195423,
+      "createdAt": "2025-09-17T09:26:35.423Z",
+      "updatedAt": "2025-09-17T09:28:10.297Z"
+    },
+    {
+      "name": "Santiago de Cuba > Agüero",
+      "cost": 100,
+      "id": 1758101214991,
+      "createdAt": "2025-09-17T09:26:54.991Z",
+      "updatedAt": "2025-09-17T09:26:54.991Z"
+    },
+    {
+      "name": "Santiago de Cuba > Distrito Jose Martí",
+      "cost": 150,
+      "id": 1758101231864,
+      "createdAt": "2025-09-17T09:27:11.864Z",
+      "updatedAt": "2025-09-17T09:27:11.864Z"
+    },
+    {
+      "name": "Santiago de Cuba > Los Pinos",
+      "cost": 200,
+      "id": 1758101271623,
+      "createdAt": "2025-09-17T09:27:51.623Z",
+      "updatedAt": "2025-09-17T09:27:51.623Z"
+    },
+    {
+      "name": "Santiago de Cuba > Quintero",
+      "cost": 500,
+      "id": 1758101326983,
+      "createdAt": "2025-09-17T09:28:46.983Z",
+      "updatedAt": "2025-09-17T09:28:46.983Z"
+    },
+    {
+      "name": "Santiago de Cuba > 30 de noviembre bajo",
+      "cost": 400,
+      "id": 1758101359671,
+      "createdAt": "2025-09-17T09:29:19.671Z",
+      "updatedAt": "2025-09-17T09:29:19.671Z"
+    },
+    {
+      "name": "Santiago de Cuba > Rajayoga",
+      "cost": 600,
+      "id": 1758101371199,
+      "createdAt": "2025-09-17T09:29:31.199Z",
+      "updatedAt": "2025-09-17T09:29:31.199Z"
+    },
+    {
+      "name": "Santiago de Cuba > Pastorita",
+      "cost": 600,
+      "id": 1758101381527,
+      "createdAt": "2025-09-17T09:29:41.527Z",
+      "updatedAt": "2025-09-17T09:29:41.527Z"
+    },
+    {
+      "name": "Santiago de Cuba > Vista Alegre",
+      "cost": 300,
+      "id": 1758101392543,
+      "createdAt": "2025-09-17T09:29:52.543Z",
+      "updatedAt": "2025-09-17T09:29:52.543Z"
+    },
+    {
+      "name": "Santiago de Cuba > Caney",
+      "cost": 1000,
+      "id": 1758101407935,
+      "createdAt": "2025-09-17T09:30:07.935Z",
+      "updatedAt": "2025-09-17T09:30:07.935Z"
+    },
+    {
+      "name": "Santiago de Cuba > Nuevo Vista Alegre",
+      "cost": 100,
+      "id": 1758101424479,
+      "createdAt": "2025-09-17T09:30:24.479Z",
+      "updatedAt": "2025-09-17T09:30:24.479Z"
+    },
+    {
+      "name": "Santiago de Cuba > Marimón",
+      "cost": 100,
+      "id": 1758101435703,
+      "createdAt": "2025-09-17T09:30:35.703Z",
+      "updatedAt": "2025-09-17T09:30:35.703Z"
+    },
+    {
+      "name": "Santiago de Cuba > Versalle Edificios",
+      "cost": 800,
+      "id": 1758101461055,
+      "createdAt": "2025-09-17T09:31:01.055Z",
+      "updatedAt": "2025-09-17T09:31:01.055Z"
+    },
+    {
+      "name": "Santiago de Cuba > Ferreiro",
+      "cost": 300,
+      "id": 1758101481079,
+      "createdAt": "2025-09-17T09:31:21.079Z",
+      "updatedAt": "2025-09-17T09:31:21.079Z"
+    },
+    {
+      "name": "Santiago de Cuba > 30 de noviembre altos",
+      "cost": 500,
+      "id": 1758101546055,
+      "createdAt": "2025-09-17T09:32:26.055Z",
+      "updatedAt": "2025-09-17T09:32:26.055Z"
+    }
+  ],
+  "novels": [
+    {
+      "id": 1,
+      "titulo": "La Casa de Papel",
+      "genero": "Drama",
+      "capitulos": 41,
+      "año": 2017,
+      "descripcion": "Un grupo de ladrones lleva a cabo el atraco perfecto a la Fábrica Nacional de Moneda y Timbre.",
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "titulo": "Elite",
+      "genero": "Drama",
+      "capitulos": 64,
+      "año": 2018,
+      "descripcion": "Las vidas de tres estudiantes de clase trabajadora cambian cuando ingresan a una escuela privada exclusiva.",
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 3,
+      "titulo": "Vis a Vis",
+      "genero": "Drama",
+      "capitulos": 40,
+      "año": 2015,
+      "descripcion": "Una joven inocente es enviada a prisión donde debe aprender a sobrevivir.",
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 4,
+      "titulo": "Narcos",
+      "genero": "Crimen",
+      "capitulos": 30,
+      "año": 2015,
+      "descripcion": "La historia del narcotráfico en Colombia y la lucha contra los carteles.",
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": 5,
+      "titulo": "Stranger Things",
+      "genero": "Ciencia Ficción",
+      "capitulos": 42,
+      "año": 2016,
+      "descripcion": "Un grupo de niños descubre fuerzas sobrenaturales y experimentos gubernamentales secretos.",
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z"
+    }
+  ],
   "settings": {
     "autoSync": true,
     "syncInterval": 300000,
@@ -23,7 +271,7 @@ const EMBEDDED_CONFIG = {
     "totalOrders": 0,
     "totalRevenue": 0,
     "lastOrderDate": "",
-    "systemUptime": "2025-01-31T10:33:00.000Z"
+    "systemUptime": "2025-09-05T07:41:37.754Z"
   }
 };
 
@@ -472,16 +720,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = syncService.subscribe((syncedState) => {
       if (JSON.stringify(syncedState) !== JSON.stringify(state)) {
         dispatch({ type: 'SYNC_STATE', payload: syncedState });
-        
-        // Broadcast changes to all components
-        window.dispatchEvent(new CustomEvent('admin_config_updated', { 
-          detail: { 
-            prices: syncedState.prices || state.prices,
-            deliveryZones: syncedState.deliveryZones || state.deliveryZones,
-            novels: syncedState.novels || state.novels,
-            timestamp: new Date().toISOString()
-          } 
-        }));
       }
     });
     return unsubscribe;
@@ -542,14 +780,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       action: 'create'
     });
     broadcastChange({ type: 'delivery_zone_add', data: zone });
-    
-    // Broadcast real-time update
-    window.dispatchEvent(new CustomEvent('admin_config_updated', { 
-      detail: { 
-        deliveryZones: [...state.deliveryZones, { ...zone, id: Date.now(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
-        timestamp: new Date().toISOString()
-      } 
-    }));
   };
 
   const updateDeliveryZone = (zone: DeliveryZone) => {
@@ -587,14 +817,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       action: 'create'
     });
     broadcastChange({ type: 'novel_add', data: novel });
-    
-    // Broadcast real-time update
-    window.dispatchEvent(new CustomEvent('admin_config_updated', { 
-      detail: { 
-        novels: [...state.novels, { ...novel, id: Date.now(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
-        timestamp: new Date().toISOString()
-      } 
-    }));
   };
 
   const updateNovel = (novel: Novel) => {
@@ -711,8 +933,79 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
         action: 'export_source_start'
       });
 
-      // Generar archivos con configuración embebida
-      await generateEmbeddedSourceCode(state);
+      const zip = new JSZip();
+      
+      // Generate updated source code with current configuration
+      const generateAdminContextSource = () => `import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import JSZip from 'jszip';
+
+// CONFIGURACIÓN EMBEBIDA - Generada automáticamente
+const EMBEDDED_CONFIG = ${JSON.stringify(state.systemConfig, null, 2)};
+
+// CREDENCIALES DE ACCESO (CONFIGURABLES)
+const ADMIN_CREDENTIALS = {
+  username: 'admin',
+  password: 'tvalacarta2024'
+};
+
+// ... resto del código AdminContext.tsx igual ...`;
+
+      const generateCartContextSource = () => `import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import { Toast } from '../components/Toast';
+import type { CartItem } from '../types/movie';
+
+// PRECIOS EMBEBIDOS - Generados automáticamente
+const EMBEDDED_PRICES = ${JSON.stringify(state.prices, null, 2)};
+
+// ... resto del código CartContext.tsx igual ...`;
+
+      const generatePriceCardSource = () => `import React from 'react';
+import { DollarSign, Tv, Film, Star, CreditCard } from 'lucide-react';
+
+// PRECIOS EMBEBIDOS - Generados automáticamente
+const EMBEDDED_PRICES = ${JSON.stringify(state.prices, null, 2)};
+
+// ... resto del código PriceCard.tsx igual ...`;
+
+      const generateCheckoutModalSource = () => `import React, { useState, useEffect } from 'react';
+import { X, MapPin, User, Phone, Home, CreditCard, DollarSign, MessageCircle, Calculator, Truck, ExternalLink } from 'lucide-react';
+
+// ZONAS DE ENTREGA EMBEBIDAS - Generadas automáticamente
+const EMBEDDED_DELIVERY_ZONES = ${JSON.stringify(state.deliveryZones, null, 2)};
+
+// PRECIOS EMBEBIDOS
+const EMBEDDED_PRICES = ${JSON.stringify(state.prices, null, 2)};
+
+// ... resto del código CheckoutModal.tsx igual ...`;
+
+      const generateNovelasModalSource = () => `import React, { useState, useEffect } from 'react';
+import { X, Download, MessageCircle, Phone, BookOpen, Info, Check, DollarSign, CreditCard, Calculator, Search, Filter, SortAsc, SortDesc, Smartphone } from 'lucide-react';
+
+// CATÁLOGO DE NOVELAS EMBEBIDO - Generado automáticamente
+const EMBEDDED_NOVELS = ${JSON.stringify(state.novels, null, 2)};
+
+// PRECIOS EMBEBIDOS
+const EMBEDDED_PRICES = ${JSON.stringify(state.prices, null, 2)};
+
+// ... resto del código NovelasModal.tsx igual ...`;
+
+      // Add files to ZIP
+      zip.file('src/context/AdminContext.tsx', generateAdminContextSource());
+      zip.file('src/context/CartContext.tsx', generateCartContextSource());
+      zip.file('src/components/PriceCard.tsx', generatePriceCardSource());
+      zip.file('src/components/CheckoutModal.tsx', generateCheckoutModalSource());
+      zip.file('src/components/NovelasModal.tsx', generateNovelasModalSource());
+
+      // Generate and download ZIP
+      const content = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(content);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `TV_a_la_Carta_SourceCode_${new Date().toISOString().split('T')[0]}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
       addNotification({
         type: 'success',
@@ -732,134 +1025,6 @@ export function AdminProvider({ children }: { children: React.ReactNode }) {
       });
       throw error;
     }
-  };
-
-  // Función para generar código fuente con configuración embebida
-  const generateEmbeddedSourceCode = async (currentState: AdminState) => {
-    const JSZip = (await import('jszip')).default;
-    const zip = new JSZip();
-
-    // Generar AdminContext.tsx con configuración embebida
-    const adminContextCode = generateAdminContextWithEmbeddedConfig(currentState);
-    zip.file('src/context/AdminContext.tsx', adminContextCode);
-
-    // Generar CartContext.tsx con precios embebidos
-    const cartContextCode = generateCartContextWithEmbeddedPrices(currentState.prices);
-    zip.file('src/context/CartContext.tsx', cartContextCode);
-
-    // Generar CheckoutModal.tsx con zonas embebidas
-    const checkoutModalCode = generateCheckoutModalWithEmbeddedZones(currentState.deliveryZones, currentState.prices);
-    zip.file('src/components/CheckoutModal.tsx', checkoutModalCode);
-
-    // Generar PriceCard.tsx con precios embebidos
-    const priceCardCode = generatePriceCardWithEmbeddedPrices(currentState.prices);
-    zip.file('src/components/PriceCard.tsx', priceCardCode);
-
-    // Generar NovelasModal.tsx con catálogo embebido
-    const novelasModalCode = generateNovelasModalWithEmbeddedCatalog(currentState.novels, currentState.prices);
-    zip.file('src/components/NovelasModal.tsx', novelasModalCode);
-
-    // Generar archivo ZIP
-    const content = await zip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(content);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `TV_a_la_Carta_Sistema_Embebido_${new Date().toISOString().split('T')[0]}.zip`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  // Función para generar AdminContext con configuración embebida
-  const generateAdminContextWithEmbeddedConfig = (currentState: AdminState): string => {
-    const embeddedConfig = {
-      version: "2.1.0",
-      lastExport: new Date().toISOString(),
-      prices: currentState.prices,
-      deliveryZones: currentState.deliveryZones,
-      novels: currentState.novels,
-      settings: currentState.systemConfig.settings,
-      metadata: {
-        ...currentState.systemConfig.metadata,
-        exportTimestamp: new Date().toISOString()
-      }
-    };
-
-    return `import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import JSZip from 'jszip';
-
-// CONFIGURACIÓN EMBEBIDA - Generada automáticamente
-const EMBEDDED_CONFIG = ${JSON.stringify(embeddedConfig, null, 2)};
-
-// CREDENCIALES DE ACCESO (CONFIGURABLES)
-const ADMIN_CREDENTIALS = {
-  username: 'admin',
-  password: 'tvalacarta2024'
-};
-
-// ... resto del código AdminContext igual que el original ...
-// [El código completo del AdminContext se mantiene igual, solo cambia la configuración embebida]
-`;
-  };
-
-  // Función para generar CartContext con precios embebidos
-  const generateCartContextWithEmbeddedPrices = (prices: PriceConfig): string => {
-    return `import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { Toast } from '../components/Toast';
-import type { CartItem } from '../types/movie';
-
-// PRECIOS EMBEBIDOS - Generados automáticamente
-const EMBEDDED_PRICES = ${JSON.stringify(prices, null, 2)};
-
-// ... resto del código CartContext igual que el original ...
-// [El código completo del CartContext se mantiene igual, solo cambian los precios embebidos]
-`;
-  };
-
-  // Función para generar CheckoutModal con zonas embebidas
-  const generateCheckoutModalWithEmbeddedZones = (zones: DeliveryZone[], prices: PriceConfig): string => {
-    return `import React, { useState, useEffect } from 'react';
-import { X, MapPin, User, Phone, Home, CreditCard, DollarSign, MessageCircle, Calculator, Truck, Navigation } from 'lucide-react';
-
-// ZONAS DE ENTREGA EMBEBIDAS - Generadas automáticamente
-const EMBEDDED_DELIVERY_ZONES = ${JSON.stringify(zones, null, 2)};
-
-// PRECIOS EMBEBIDOS
-const EMBEDDED_PRICES = ${JSON.stringify(prices, null, 2)};
-
-// ... resto del código CheckoutModal igual que el original ...
-// [El código completo del CheckoutModal se mantiene igual, solo cambian las zonas y precios embebidos]
-`;
-  };
-
-  // Función para generar PriceCard con precios embebidos
-  const generatePriceCardWithEmbeddedPrices = (prices: PriceConfig): string => {
-    return `import React from 'react';
-import { DollarSign, Tv, Film, Star, CreditCard } from 'lucide-react';
-
-// PRECIOS EMBEBIDOS - Generados automáticamente
-const EMBEDDED_PRICES = ${JSON.stringify(prices, null, 2)};
-
-// ... resto del código PriceCard igual que el original ...
-// [El código completo del PriceCard se mantiene igual, solo cambian los precios embebidos]
-`;
-  };
-
-  // Función para generar NovelasModal con catálogo embebido
-  const generateNovelasModalWithEmbeddedCatalog = (novels: Novel[], prices: PriceConfig): string => {
-    return `import React, { useState } from 'react';
-import { X, Download, MessageCircle, Phone, BookOpen, Info, Check, DollarSign, CreditCard, Calculator, Search, Filter, SortAsc, SortDesc, Smartphone } from 'lucide-react';
-
-// CATÁLOGO DE NOVELAS EMBEBIDO - Generado automáticamente
-const EMBEDDED_NOVELS = ${JSON.stringify(novels, null, 2)};
-
-// PRECIOS EMBEBIDOS
-const EMBEDDED_PRICES = ${JSON.stringify(prices, null, 2)};
-
-// ... resto del código NovelasModal igual que el original ...
-// [El código completo del NovelasModal se mantiene igual, solo cambian las novelas y precios embebidos]
-`;
   };
 
   const importSystemConfig = (config: SystemConfig) => {
