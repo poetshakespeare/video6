@@ -23,7 +23,7 @@ export function NovelasModal({ isOpen, onClose, onFinalizePedido }: NovelasModal
   const { getCurrentPrices, addNovel } = useCart();
   const [selectedNovelas, setSelectedNovelas] = useState<number[]>([]);
   const [novelasWithPayment, setNovelasWithPayment] = useState<Novela[]>([]);
-  const [showNovelList, setShowNovelList] = useState(false);
+  const [showNovelList, setShowNovelList] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
@@ -105,6 +105,16 @@ export function NovelasModal({ isOpen, onClose, onFinalizePedido }: NovelasModal
       paymentType: 'cash' as const
     }));
     setNovelasWithPayment(novelasWithDefaultPayment);
+    
+    // Cargar novelas previamente seleccionadas del carrito
+    const cartItems = JSON.parse(localStorage.getItem('movieCart') || '[]');
+    const novelasEnCarrito = cartItems
+      .filter((item: any) => item.type === 'novel')
+      .map((item: any) => item.id);
+    
+    if (novelasEnCarrito.length > 0) {
+      setSelectedNovelas(novelasEnCarrito);
+    }
   }, [adminNovels]);
 
   // Filter novels function
