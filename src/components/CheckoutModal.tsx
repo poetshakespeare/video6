@@ -304,49 +304,92 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
               
               <div className="space-y-3">
                 {/* Pickup Option */}
-                <label
-                  className={`flex items-center justify-between p-4 border rounded-lg cursor-pointer transition-colors ${
+                <div
+                  className={`border-2 rounded-xl overflow-hidden transition-all duration-300 ${
                     selectedZone === 'pickup'
-                      ? 'border-green-500 bg-green-50'
-                      : 'border-gray-300 hover:border-green-300'
+                      ? 'border-green-500 bg-gradient-to-r from-green-50 to-emerald-50 shadow-lg'
+                      : 'border-gray-300 hover:border-green-400 hover:shadow-md'
                   }`}
                 >
-                  <div className="flex items-center">
-                    <input
-                      type="radio"
-                      name="deliveryOption"
-                      value="pickup"
-                      checked={selectedZone === 'pickup'}
-                      onChange={(e) => handleZoneChange(e.target.value)}
-                      className="mr-3 h-4 w-4 text-green-600 focus:ring-green-500"
-                    />
-                    <div>
-                      <p className="font-medium text-gray-900">Recogida en TV a la Carta</p>
-                      <p className="text-sm text-gray-600">Reparto Nuevo Vista Alegre, Santiago de Cuba</p>
+                  <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4 text-white">
+                    <div className="flex items-center">
+                      <div className="bg-white/20 p-2 rounded-lg mr-3">
+                        <Home className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-lg">🏪 Recogida en el Local</h4>
+                        <p className="text-green-100 text-sm">Opción más económica</p>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-green-600">GRATIS</p>
+                  
+                  <label className="flex items-center justify-between p-4 cursor-pointer">
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        name="deliveryOption"
+                        value="pickup"
+                        checked={selectedZone === 'pickup'}
+                        onChange={(e) => handleZoneChange(e.target.value)}
+                        className="mr-4 h-5 w-5 text-green-600 focus:ring-green-500"
+                      />
+                      <div>
+                        <p className="font-semibold text-gray-900 text-lg">TV a la Carta</p>
+                        <p className="text-sm text-gray-600 mb-2">📍 Reparto Nuevo Vista Alegre, Santiago de Cuba</p>
+                        <div className="flex flex-wrap gap-2 text-xs">
+                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                            ⏰ Horario flexible
+                          </span>
+                          <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+                            🚗 Sin costo adicional
+                          </span>
+                          <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">
+                            📱 Confirmación inmediata
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-full font-bold text-lg shadow-lg">
+                        GRATIS
+                      </div>
+                      <p className="text-xs text-green-600 mt-1 font-medium">Ahorro: hasta $1,000 CUP</p>
+                    </div>
+                  </label>
+                </div>
                   </div>
                 </label>
 
                 {/* Home Delivery Option */}
                 {deliveryZones.length > 0 && (
-                  <div className="border border-gray-300 rounded-lg overflow-hidden">
-                    <div className="bg-blue-50 p-3 border-b border-gray-300">
-                      <h4 className="font-medium text-blue-900 flex items-center">
-                        <Truck className="h-4 w-4 mr-2" />
-                        Entrega a Domicilio
-                      </h4>
+                  <div className="border-2 border-gray-300 rounded-xl overflow-hidden hover:border-blue-400 transition-all duration-300 hover:shadow-md">
+                    <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-4 text-white">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="bg-white/20 p-2 rounded-lg mr-3">
+                            <Truck className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-lg">🚚 Entrega a Domicilio</h4>
+                            <p className="text-blue-100 text-sm">Comodidad en tu hogar</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="bg-white/20 px-3 py-1 rounded-full">
+                            <span className="text-sm font-medium">{deliveryZones.length} zonas</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="max-h-48 overflow-y-auto">
+                    
+                    <div className="max-h-64 overflow-y-auto bg-white">
                       {deliveryZones.map((zone) => (
                         <label
                           key={zone.id}
-                          className={`flex items-center justify-between p-4 border-b border-gray-100 last:border-b-0 cursor-pointer transition-colors hover:bg-blue-50 ${
+                          className={`flex items-center justify-between p-4 border-b border-gray-100 last:border-b-0 cursor-pointer transition-all duration-300 ${
                             selectedZone === zone.name
-                              ? 'bg-blue-50 border-blue-200'
-                              : ''
+                              ? 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-300 shadow-inner'
+                              : 'hover:bg-gradient-to-r hover:from-blue-25 hover:to-purple-25 hover:shadow-sm'
                           }`}
                         >
                           <div className="flex items-center">
@@ -356,16 +399,21 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
                               value={zone.name}
                               checked={selectedZone === zone.name}
                               onChange={(e) => handleZoneChange(e.target.value)}
-                              className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500"
+                              className="mr-4 h-5 w-5 text-blue-600 focus:ring-blue-500"
                             />
                             <div>
-                              <p className="font-medium text-gray-900">{zone.name}</p>
+                              <p className="font-semibold text-gray-900 text-base">{zone.name}</p>
+                              <div className="flex items-center mt-1 text-xs text-gray-500">
+                                <MapPin className="h-3 w-3 mr-1" />
+                                <span>Zona de entrega disponible</span>
+                              </div>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-blue-600">
+                            <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-2 rounded-lg font-bold shadow-sm">
                               ${zone.cost.toLocaleString()} CUP
-                            </p>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">Costo de entrega</p>
                           </div>
                         </label>
                       ))}
@@ -419,34 +467,159 @@ export function CheckoutModal({ isOpen, onClose, onCheckout, items, total }: Che
             </div>
 
             {/* Order Summary */}
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-200">
+            <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl p-6 border-2 border-gray-200 shadow-lg">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <Calculator className="h-5 w-5 mr-2 text-blue-600" />
+                <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-2 rounded-lg mr-3">
+                  <Calculator className="h-5 w-5 text-white" />
+                </div>
                 Resumen del Pedido
               </h3>
               
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Subtotal ({items.length} elementos)</span>
-                  <span className="font-semibold">${total.toLocaleString()} CUP</span>
+              <div className="space-y-4">
+                {/* Desglose detallado por tipo de contenido */}
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 border border-blue-200">
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                    <span className="text-base mr-2">📊</span>
+                    Desglose por Tipo de Contenido
+                  </h4>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                    {items.filter(item => item.type === 'movie').length > 0 && (
+                      <div className="bg-white rounded-lg p-3 border border-blue-200 text-center">
+                        <div className="text-lg font-bold text-blue-600">
+                          {items.filter(item => item.type === 'movie').length}
+                        </div>
+                        <div className="text-xs text-gray-600">Películas</div>
+                        <div className="text-sm font-semibold text-blue-700 mt-1">
+                          ${items.filter(item => item.type === 'movie').reduce((sum, item) => sum + item.price, 0).toLocaleString()} CUP
+                        </div>
+                      </div>
+                    )}
+                    
+                    {items.filter(item => item.type === 'tv').length > 0 && (
+                      <div className="bg-white rounded-lg p-3 border border-purple-200 text-center">
+                        <div className="text-lg font-bold text-purple-600">
+                          {items.filter(item => item.type === 'tv').length}
+                        </div>
+                        <div className="text-xs text-gray-600">Series</div>
+                        <div className="text-sm font-semibold text-purple-700 mt-1">
+                          ${items.filter(item => item.type === 'tv').reduce((sum, item) => sum + item.price, 0).toLocaleString()} CUP
+                        </div>
+                      </div>
+                    )}
+                    
+                    {items.filter(item => item.type === 'novel').length > 0 && (
+                      <div className="bg-white rounded-lg p-3 border border-pink-200 text-center">
+                        <div className="text-lg font-bold text-pink-600">
+                          {items.filter(item => item.type === 'novel').length}
+                        </div>
+                        <div className="text-xs text-gray-600">Novelas</div>
+                        <div className="text-sm font-semibold text-pink-700 mt-1">
+                          ${items.filter(item => item.type === 'novel').reduce((sum, item) => sum + item.price, 0).toLocaleString()} CUP
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Desglose por método de pago */}
+                <div className="bg-gradient-to-r from-green-50 to-orange-50 rounded-xl p-4 border border-gray-200">
+                  <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                    <span className="text-base mr-2">💳</span>
+                    Desglose por Método de Pago
+                  </h4>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                    <div className="bg-white rounded-lg p-4 border border-green-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <DollarSign className="h-5 w-5 text-green-600 mr-2" />
+                          <span className="font-semibold text-green-700">Efectivo</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-green-600">
+                            ${items.filter(item => item.paymentType === 'cash').reduce((sum, item) => sum + item.price, 0).toLocaleString()} CUP
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {items.filter(item => item.paymentType === 'cash').length} elementos
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-white rounded-lg p-4 border border-orange-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <CreditCard className="h-5 w-5 text-orange-600 mr-2" />
+                          <span className="font-semibold text-orange-700">Transferencia</span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg font-bold text-orange-600">
+                            ${items.filter(item => item.paymentType === 'transfer').reduce((sum, item) => sum + item.price, 0).toLocaleString()} CUP
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {items.filter(item => item.paymentType === 'transfer').length} elementos
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-gradient-to-r from-gray-100 to-blue-100 rounded-xl p-4 border border-gray-300">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-700 font-medium">Subtotal del contenido:</span>
+                    <span className="font-bold text-gray-900 text-lg">${total.toLocaleString()} CUP</span>
+                  </div>
+                  <div className="text-xs text-gray-600 text-center">
+                    {items.length} elemento{items.length !== 1 ? 's' : ''} seleccionado{items.length !== 1 ? 's' : ''}
+                  </div>
                 </div>
                 
                 {selectedZone && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">
-                      {pickupLocation ? 'Recogida en local' : 'Entrega'}
-                    </span>
-                    <span className={`font-semibold ${deliveryCost === 0 ? 'text-green-600' : ''}`}>
-                      {deliveryCost === 0 ? 'GRATIS' : `$${deliveryCost.toLocaleString()} CUP`}
-                    </span>
+                  <div className={`rounded-xl p-4 border-2 ${
+                    pickupLocation 
+                      ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300' 
+                      : 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-300'
+                  }`}>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center">
+                        {pickupLocation ? (
+                          <Home className="h-5 w-5 text-green-600 mr-2" />
+                        ) : (
+                          <Truck className="h-5 w-5 text-blue-600 mr-2" />
+                        )}
+                        <span className="font-medium text-gray-700">
+                          {pickupLocation ? 'Recogida en local' : `Entrega: ${selectedZone}`}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className={`font-bold text-lg ${
+                          deliveryCost === 0 ? 'text-green-600' : 'text-blue-600'
+                        }`}>
+                          {deliveryCost === 0 ? 'GRATIS' : `$${deliveryCost.toLocaleString()} CUP`}
+                        </span>
+                        {!pickupLocation && (
+                          <div className="text-xs text-gray-500 mt-1">Costo de entrega</div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
                 
-                <div className="border-t border-gray-300 pt-3">
+                <div className="bg-gradient-to-r from-green-100 to-blue-100 rounded-xl p-4 border-2 border-green-300 shadow-lg">
                   <div className="flex justify-between items-center">
-                    <span className="text-lg font-bold text-gray-900">Total</span>
-                    <span className="text-xl font-bold text-blue-600">
+                    <span className="text-xl font-bold text-gray-900 flex items-center">
+                      <span className="text-2xl mr-2">🎯</span>
+                      TOTAL FINAL
+                    </span>
+                    <span className="text-2xl font-bold text-green-600">
                       ${(total + deliveryCost).toLocaleString()} CUP
+                    </span>
+                  </div>
+                  <div className="text-center mt-2">
+                    <span className="text-sm text-gray-600 bg-white px-3 py-1 rounded-full border border-gray-300">
+                      Contenido: ${total.toLocaleString()} + Entrega: ${deliveryCost.toLocaleString()} CUP
                     </span>
                   </div>
                 </div>
