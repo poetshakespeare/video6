@@ -1,5 +1,159 @@
 import { OrderData, CustomerInfo } from '../components/CheckoutModal';
 
+// Detectar dispositivo y sistema operativo para WhatsApp
+const getDeviceAndOSInfo = () => {
+  const userAgent = navigator.userAgent.toLowerCase();
+  const platform = navigator.platform.toLowerCase();
+  const maxTouchPoints = navigator.maxTouchPoints || 0;
+  const screenWidth = window.screen.width;
+
+  // Detectar sistema operativo con mayor precisión
+  let os = 'unknown';
+  let osVersion = '';
+  
+  if (userAgent.includes('android')) {
+    os = 'android';
+    const match = userAgent.match(/android\s([0-9\.]*)/);
+    osVersion = match ? match[1] : '';
+  } else if (userAgent.includes('iphone') || userAgent.includes('ipad') || userAgent.includes('ipod')) {
+    os = 'ios';
+    const match = userAgent.match(/os\s([0-9_]*)/);
+    osVersion = match ? match[1].replace(/_/g, '.') : '';
+  } else if (userAgent.includes('mac')) {
+    os = 'macos';
+    const match = userAgent.match(/mac\sos\sx\s([0-9_]*)/);
+    osVersion = match ? match[1].replace(/_/g, '.') : '';
+  } else if (userAgent.includes('win')) {
+    os = 'windows';
+    if (userAgent.includes('windows nt 10.0')) osVersion = '10/11';
+    else if (userAgent.includes('windows nt 6.3')) osVersion = '8.1';
+    else if (userAgent.includes('windows nt 6.2')) osVersion = '8';
+    else if (userAgent.includes('windows nt 6.1')) osVersion = '7';
+  } else if (userAgent.includes('linux')) {
+    os = 'linux';
+    if (userAgent.includes('ubuntu')) osVersion = 'Ubuntu';
+    else if (userAgent.includes('debian')) osVersion = 'Debian';
+    else if (userAgent.includes('fedora')) osVersion = 'Fedora';
+    else if (userAgent.includes('centos')) osVersion = 'CentOS';
+  } else if (userAgent.includes('cros')) {
+    os = 'chromeos';
+  }
+
+  // Detectar tipo de dispositivo
+  let deviceType = 'desktop';
+  if ((screenWidth <= 768) && maxTouchPoints > 0) {
+    deviceType = 'mobile';
+  } else if ((screenWidth <= 1024 && screenWidth > 768) && maxTouchPoints > 0) {
+    deviceType = 'tablet';
+  }
+
+  // Detectar navegador
+  let browser = 'unknown';
+  if (userAgent.includes('chrome') && !userAgent.includes('edg') && !userAgent.includes('opr')) {
+    browser = 'chrome';
+  } else if (userAgent.includes('firefox')) {
+    browser = 'firefox';
+  } else if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
+    browser = 'safari';
+  } else if (userAgent.includes('edg')) {
+    browser = 'edge';
+  } else if (userAgent.includes('opr') || userAgent.includes('opera')) {
+    browser = 'opera';
+  } else if (userAgent.includes('samsung')) {
+    browser = 'samsung';
+  }
+
+  return {
+    os,
+    osVersion,
+    deviceType,
+    browser,
+    screenWidth,
+    maxTouchPoints,
+    isTouchDevice: maxTouchPoints > 0,
+    userAgent: navigator.userAgent
+  };
+};
+
+// Función mejorada para abrir WhatsApp en cualquier dispositivo y navegador
+const openWhatsAppUniversal = (phoneNumber: string, message: string) => {
+  const deviceInfo = getDeviceAndOSInfo();
+  const encodedMessage = encodeURIComponent(message);
+  
+  // URLs de WhatsApp para diferentes plataformas
+  const whatsappUrls = {
+    // URL principal (funciona en la mayoría de casos)
+    web: `https://wa.me/${phoneNumber}?text=${encodedMessage}`,
+    // URL alternativa para navegadores web
+    webApi: `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`,
+    // URL para aplicación móvil
+    app: `whatsapp://send?phone=${phoneNumber}&text=${encodedMessage}`,
+    // URL para WhatsApp Business
+    business: `https://wa.me/${phoneNumber}?text=${encodedMessage}`,
+  };
+
+  // Función para intentar abrir WhatsApp con múltiples métodos
+  const tryOpenWhatsApp = () => {
+    let opened = false;
+
+    // Método 1: Intentar abrir la aplicación nativa (móviles y tablets)
+    if ((deviceInfo.deviceType === 'mobile' || deviceInfo.deviceType === 'tablet') && 
+        (deviceInfo.os === 'android' || deviceInfo.os === 'ios')) {
+      
+      try {
+        // Crear un enlace temporal para la aplicación
+        const appLink = document.createElement('a');
+        appLink.href = whatsappUrls.app;
+        appLink.style.display = 'none';
+        document.body.appendChild(appLink);
+        appLink.click();
+        document.body.removeChild(appLink);
+        
+        // Verificar si se abrió la app después de un breve delay
+        setTimeout(() => {
+          if (!document.hidden) {
+            // Si la página sigue visible, la app no se abrió, usar web
+            window.open(whatsappUrls.web, '_blank', 'noopener,noreferrer');
+          }
+        }, 1000);
+        
+        opened = true;
+      } catch (error) {
+        console.warn('No se pudo abrir la aplicación nativa de WhatsApp:', error);
+      }
+    }
+
+    // Método 2: Abrir en navegador web (todos los dispositivos)
+    if (!opened) {
+      try {
+        // Intentar abrir en nueva pestaña
+        const newWindow = window.open(whatsappUrls.web, '_blank', 'noopener,noreferrer,width=800,height=600');
+        
+        // Verificar si se bloqueó el popup
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+          // Fallback: redirigir en la misma pestaña
+          window.location.href = whatsappUrls.web;
+        } else {
+          opened = true;
+        }
+      } catch (error) {
+        console.warn('Error abriendo WhatsApp Web:', error);
+        
+        // Último recurso: intentar con la API alternativa
+        try {
+          window.location.href = whatsappUrls.webApi;
+        } catch (finalError) {
+          console.error('No se pudo abrir WhatsApp:', finalError);
+          alert('No se pudo abrir WhatsApp automáticamente. Por favor, contacta manualmente al +53 5469 0878');
+        }
+      }
+    }
+  };
+
+  // Ejecutar con un pequeño delay para mejor compatibilidad
+  setTimeout(tryOpenWhatsApp, 100);
+};
+
 export function sendOrderToWhatsApp(orderData: OrderData): void {
   const { 
     orderId, 
@@ -16,7 +170,9 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
     showLocationMap = false
   } = orderData;
 
-  // Obtener el porcentaje de transferencia actual del contexto admin
+  const deviceInfo = getDeviceAndOSInfo();
+
+  // Obtener configuración actual
   const getTransferFeePercentage = () => {
     try {
       const adminState = localStorage.getItem('admin_system_state');
@@ -27,10 +183,9 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
     } catch (error) {
       console.warn('No se pudo obtener el porcentaje de transferencia del admin:', error);
     }
-    return 10; // Valor por defecto
+    return 10;
   };
 
-  // Obtener precios actuales del contexto admin
   const getCurrentPrices = () => {
     try {
       const adminState = localStorage.getItem('admin_system_state');
@@ -57,7 +212,7 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
   const currentPrices = getCurrentPrices();
   const transferFeePercentage = currentPrices.transferFeePercentage;
   
-  // Formatear lista de productos con desglose detallado de métodos de pago
+  // Formatear lista de productos
   const itemsList = items
     .map(item => {
       const seasonInfo = item.type === 'tv' && item.selectedSeasons && item.selectedSeasons.length > 0 
@@ -90,7 +245,6 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
       let itemText = `${emoji} *${item.title}*${seasonInfo}${extendedSeriesInfo}${novelInfo}\n`;
       itemText += `  📋 Tipo: ${itemType}\n`;
       
-      // Add extended series pricing explanation
       if (item.type === 'tv' && item.episodeCount && item.episodeCount > 50) {
         itemText += `  📊 Serie extensa: ${item.episodeCount} episodios (precio estándar $${currentPrices.seriesPrice} CUP/temporada)\n`;
       }
@@ -110,7 +264,7 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
     })
     .join('\n\n');
 
-  // Construir mensaje completo
+  // Construir mensaje completo con información del dispositivo
   let message = `🎬 *NUEVO PEDIDO - TV A LA CARTA*\n\n`;
   message += `📋 *ID de Orden:* ${orderId}\n\n`;
   
@@ -128,7 +282,6 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
   const cashItems = items.filter(item => item.paymentType === 'cash');
   const transferItems = items.filter(item => item.paymentType === 'transfer');
   
-  // Mostrar desglose detallado por tipo de pago
   message += `📊 *DESGLOSE DETALLADO POR MÉTODO DE PAGO:*\n`;
   
   if (cashItems.length > 0) {
@@ -225,20 +378,26 @@ export function sendOrderToWhatsApp(orderData: OrderData): void {
   message += `• Novelas: $${currentPrices.novelPricePerChapter.toLocaleString()} CUP por capítulo\n`;
   message += `• Recargo transferencia: ${transferFeePercentage}%\n\n`;
   
-  message += `📱 *Enviado desde:* TV a la Carta App\n`;
+  // Información del dispositivo y sistema
+  message += `📱 *INFORMACIÓN DEL DISPOSITIVO:*\n`;
+  message += `• Dispositivo: ${deviceInfo.deviceType === 'mobile' ? '📱 Móvil' : deviceInfo.deviceType === 'tablet' ? '📱 Tablet' : '💻 PC/Laptop'}\n`;
+  message += `• Sistema operativo: ${deviceInfo.os.toUpperCase()}${deviceInfo.osVersion ? ` ${deviceInfo.osVersion}` : ''}\n`;
+  message += `• Navegador: ${deviceInfo.browser.charAt(0).toUpperCase() + deviceInfo.browser.slice(1)}\n`;
+  message += `• Pantalla: ${deviceInfo.screenWidth}px${deviceInfo.isTouchDevice ? ' (Táctil)' : ''}\n`;
+  
+  message += `\n📱 *Enviado desde:* TV a la Carta App\n`;
   message += `⏰ *Fecha y hora:* ${new Date().toLocaleString('es-ES', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit'
+    second: '2-digit',
+    timeZone: 'America/Havana'
   })}\n`;
   message += `🌟 *¡Gracias por elegir TV a la Carta!*`;
   
-  const encodedMessage = encodeURIComponent(message);
-  const phoneNumber = '5354690878'; // Número de WhatsApp
-  const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-  
-  window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+  // Usar la función universal para abrir WhatsApp
+  const phoneNumber = '5354690878';
+  openWhatsAppUniversal(phoneNumber, message);
 }
