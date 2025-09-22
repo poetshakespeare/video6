@@ -162,7 +162,7 @@ export function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-3xl md:text-5xl font-bold mb-6">
             Descubre el Mundo del
-            <span className="text-gradient-animated">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-pink-400">
               {' '}Entretenimiento
             </span>
           </h1>
