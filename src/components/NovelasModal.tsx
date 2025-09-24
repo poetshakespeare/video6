@@ -52,6 +52,15 @@ export function NovelasModal({ isOpen, onClose, onFinalizePedido }: NovelasModal
           if (config.novels) {
             setAdminNovels(config.novels);
           }
+        } else {
+          // Si no hay configuración guardada, intentar cargar del estado del admin
+          const adminState = localStorage.getItem('admin_system_state');
+          if (adminState) {
+            const state = JSON.parse(adminState);
+            if (state.novels) {
+              setAdminNovels(state.novels);
+            }
+          }
         }
       } catch (error) {
         console.error('Error loading novels:', error);
@@ -72,15 +81,25 @@ export function NovelasModal({ isOpen, onClose, onFinalizePedido }: NovelasModal
     const handleAdminFullSync = (event: CustomEvent) => {
       if (event.detail.config?.novels) {
         setAdminNovels(event.detail.config.novels);
+      } else if (event.detail.state?.novels) {
+        setAdminNovels(event.detail.state.novels);
       }
     };
 
+    // Listen for direct admin state changes
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'admin_system_state' || event.key === 'system_config') {
+        loadNovels();
+      }
+    };
     window.addEventListener('admin_state_change', handleAdminStateChange as EventListener);
     window.addEventListener('admin_full_sync', handleAdminFullSync as EventListener);
+    window.addEventListener('storage', handleStorageChange);
 
     return () => {
       window.removeEventListener('admin_state_change', handleAdminStateChange as EventListener);
       window.removeEventListener('admin_full_sync', handleAdminFullSync as EventListener);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 
