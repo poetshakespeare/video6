@@ -71,6 +71,8 @@ export function Header() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Buscar películas, series..."
                   className="pl-10 pr-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent w-64"
+                  autoComplete="off"
+                  spellCheck="false"
                 />
               </div>
             </form>
@@ -100,6 +102,8 @@ export function Header() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar películas, series..."
                 className="pl-10 pr-4 py-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-transparent w-full"
+                autoComplete="off"
+                spellCheck="false"
               />
             </div>
           </form>

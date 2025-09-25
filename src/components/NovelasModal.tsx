@@ -566,6 +566,8 @@ export function NovelasModal({ isOpen, onClose, onFinalizePedido }: NovelasModal
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-10 sm:pl-12 pr-3 sm:pr-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white shadow-sm"
+                        autoComplete="off"
+                        spellCheck="false"
                       />
                     </div>
                     
