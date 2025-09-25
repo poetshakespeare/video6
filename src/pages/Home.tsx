@@ -393,9 +393,15 @@ export function Home() {
               <p className="text-red-600 mb-4">
                 Actualmente no hay novelas siendo transmitidas.
               </p>
+              <h3 className="text-lg font-semibold text-green-800 mb-2">
+                No hay novelas finalizadas
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              <p className="text-green-600 mb-4">
+                Actualmente no hay novelas finalizadas disponibles.
+              </button>
               <button
                 onClick={() => setShowNovelasModal(true)}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
               >
                 Ver catálogo completo
               </button>
@@ -403,7 +409,7 @@ export function Home() {
           )}
         </section>
 
-        {/* Sección Dedicada: Novelas Finalizadas */}
+        {/* Novelas Finalizadas */}
         <section className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center">
@@ -421,7 +427,7 @@ export function Home() {
             </button>
           </div>
           
-          {adminState.novels && adminState.novels.length > 0 ? (
+          {novelsFinished.length > 0 ? (
             <>
               {adminState.novels.filter(novel => novel.estado === 'finalizada').length > 0 ? (
                 <>
@@ -489,150 +495,6 @@ export function Home() {
                             </div>
                             <div className="text-center bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-2 border border-green-200">
                               <span className="text-sm font-bold text-green-600">
-                                ${(novel.capitulos * currentPrices.novelPricePerChapter).toLocaleString()} CUP
-                              </span>
-                              <div className="text-xs text-gray-500 mt-1">
-                                ${currentPrices.novelPricePerChapter} CUP × {novel.capitulos} cap.
-                              </div>
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                  </div>
-                  <div className="text-center mt-8">
-                    <button
-                      onClick={() => setShowNovelasModal(true)}
-                      className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 flex items-center mx-auto"
-                    >
-                      <Library className="mr-2 h-5 w-5" />
-                      Ver Todas las Novelas en Transmisión
-                    </button>
-                    <p className="text-sm text-gray-600 mt-3 max-w-md mx-auto">
-                      {adminState.novels.filter(novel => novel.estado === 'transmision').length} novelas actualmente en transmisión
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
-                  <div className="bg-red-100 p-4 rounded-full w-fit mx-auto mb-4">
-                    <span className="text-2xl">📡</span>
-                  </div>
-                  <h3 className="text-lg font-semibold text-red-800 mb-2">
-                    No hay novelas en transmisión
-                  </h3>
-                  <p className="text-red-600 mb-4">
-                    Actualmente no hay novelas siendo transmitidas.
-                  </p>
-                  <button
-                    onClick={() => setShowNovelasModal(true)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    Ver catálogo completo
-                  </button>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center">
-              <div className="bg-gray-100 p-4 rounded-full w-fit mx-auto mb-4">
-                <Library className="h-8 w-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                Catálogo de novelas no disponible
-              </h3>
-              <p className="text-gray-600">
-                No se pudo cargar el catálogo de novelas.
-              </p>
-            </div>
-          )}
-        </section>
-
-        {/* Popular Movies */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Clapperboard className="mr-2 h-6 w-6 text-blue-500" />
-              Películas Destacadas
-            </h2>
-            <Link
-              to="/movies"
-              className="text-blue-600 hover:text-blue-800 flex items-center font-medium"
-            >
-              Ver todas
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {popularMovies.map((movie) => (
-              <MovieCard key={movie.id} item={movie} type="movie" />
-            ))}
-          </div>
-        </section>
-
-        {/* Popular TV Shows */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Monitor className="mr-2 h-6 w-6 text-purple-500" />
-              Series Destacadas
-            </h2>
-            <Link
-              to="/tv"
-              className="text-blue-600 hover:text-blue-800 flex items-center font-medium"
-            >
-              Ver todas
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {popularTVShows.map((show) => (
-              <MovieCard key={show.id} item={show} type="tv" />
-            ))}
-          </div>
-        </section>
-
-        {/* Popular Anime */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Sparkles className="mr-2 h-6 w-6 text-pink-500" />
-              Anime Destacado
-            </h2>
-            <Link
-              to="/anime"
-              className="text-blue-600 hover:text-blue-800 flex items-center font-medium"
-            >
-              Ver todos
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {popularAnime.map((anime) => (
-              <MovieCard key={anime.id} item={anime} type="tv" />
-            ))}
-          </div>
-        </section>
-
-        {/* Novelas Finalizadas */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-2 rounded-xl mr-3 shadow-lg">
-                <span className="text-white text-lg">✅</span>
-              </div>
-              Novelas Finalizadas
-            </h2>
-            <button
-              onClick={() => setShowNovelasModal(true)}
-              className="text-green-600 hover:text-green-800 flex items-center font-medium"
-            >
-              Ver catálogo completo
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </button>
-          </div>
-          
-          {novelsFinished.length > 0 ? (
-            <>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                 {novelsFinished.slice(0, 10).map((novel) => (
                   <Link
@@ -716,31 +578,11 @@ export function Home() {
                   {novelsFinished.length} novelas finalizadas disponibles
                 </p>
               </div>
-            </>
-          ) : (
+        </section>
+
             <div className="bg-green-50 border border-green-200 rounded-xl p-8 text-center">
               <div className="bg-green-100 p-4 rounded-full w-fit mx-auto mb-4">
                 <span className="text-2xl">✅</span>
-              </div>
-              <h3 className="text-lg font-semibold text-green-800 mb-2">
-                No hay novelas finalizadas
-              </h3>
-              <p className="text-green-600 mb-4">
-                Actualmente no hay novelas finalizadas disponibles.
-              </p>
-              <button
-                onClick={() => setShowNovelasModal(true)}
-                className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-              >
-                Ver catálogo completo
-              </button>
-            </div>
-          )}
-        </section>
-
-        {/* Last Update Info (Hidden from users) */}
-        <div className="hidden">
-          <p>Última actualización: {lastUpdate.toLocaleString()}</p>
         </div>
       </div>
       
