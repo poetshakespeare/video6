@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Menu, X, Home, Clapperboard, Monitor, Sparkles, Library, Radio, CheckCircle2, Flame, ChevronUp, ChevronDown } from 'lucide-react';
+import { Menu, X, Home, Clapperboard, Monitor, Sparkles, Library, Radio, CheckCircle2, Flame } from 'lucide-react';
 
 interface Section {
   id: string;
@@ -10,7 +10,6 @@ interface Section {
 export function QuickNavMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-  const [showArrows, setShowArrows] = useState(false);
 
   const sections: Section[] = [
     { id: 'hero', name: 'Inicio', icon: <Home className="h-4 w-4" /> },
@@ -25,7 +24,6 @@ export function QuickNavMenu() {
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY + 200;
-      setShowArrows(window.scrollY > 300);
 
       let currentIndex = 0;
       sections.forEach((section, index) => {
@@ -59,14 +57,6 @@ export function QuickNavMenu() {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setIsOpen(false);
-  };
-
-  const navigateToSection = (direction: 'up' | 'down') => {
-    const newIndex = direction === 'up'
-      ? Math.max(0, currentSectionIndex - 1)
-      : Math.min(sections.length - 1, currentSectionIndex + 1);
-
-    scrollToSection(sections[newIndex].id);
   };
 
   return (
@@ -136,43 +126,6 @@ export function QuickNavMenu() {
         </>
       )}
 
-      {/* Navigation Arrows - Only show on larger screens */}
-      {showArrows && (
-        <div className="fixed right-4 bottom-20 z-40 hidden sm:flex flex-col space-y-2 md:space-y-3">
-          {/* Up Arrow */}
-          <button
-            onClick={() => navigateToSection('up')}
-            disabled={currentSectionIndex === 0}
-            className={`p-2.5 md:p-3 rounded-full shadow-lg transition-all duration-300 ${
-              currentSectionIndex === 0
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'
-                : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-xl hover:scale-110'
-            }`}
-            aria-label="Sección anterior"
-          >
-            <ChevronUp className="h-5 w-5 md:h-6 md:w-6" />
-          </button>
-
-          {/* Section indicator */}
-          <div className="bg-white rounded-full px-2.5 md:px-3 py-1.5 md:py-2 shadow-lg text-xs md:text-sm font-bold text-gray-700 text-center">
-            {currentSectionIndex + 1}/{sections.length}
-          </div>
-
-          {/* Down Arrow */}
-          <button
-            onClick={() => navigateToSection('down')}
-            disabled={currentSectionIndex === sections.length - 1}
-            className={`p-2.5 md:p-3 rounded-full shadow-lg transition-all duration-300 ${
-              currentSectionIndex === sections.length - 1
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'
-                : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-xl hover:scale-110'
-            }`}
-            aria-label="Siguiente sección"
-          >
-            <ChevronDown className="h-5 w-5 md:h-6 md:w-6" />
-          </button>
-        </div>
-      )}
     </>
   );
 }
