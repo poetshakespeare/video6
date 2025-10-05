@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, TrendingUp, Star, Monitor, Filter, Calendar, Clock, Flame, Library, Play, Clapperboard, Sparkles, Radio, CheckCircle2 } from 'lucide-react';
+import { ChevronRight, TrendingUp, Star, Monitor, Filter, Calendar, Clock, Flame, Library, Play, Clapperboard, Radio, CheckCircle2, Zap } from 'lucide-react';
 import { tmdbService } from '../services/tmdb';
 import { useCart } from '../context/CartContext';
 import { useAdmin } from '../context/AdminContext';
@@ -632,7 +632,7 @@ export function Home() {
         <section id="anime" className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Sparkles className="mr-2 h-6 w-6 text-pink-500" />
+              <Zap className="mr-2 h-6 w-6 text-yellow-500" />
               Anime Destacado
             </h2>
             <Link

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Home, Clapperboard, Monitor, Sparkles, Library, Radio, CheckCircle2, Flame } from 'lucide-react';
+import { Menu, X, Home, Clapperboard, Monitor, Library, Radio, CheckCircle2, Flame, Zap } from 'lucide-react';
 
 interface Section {
   id: string;
@@ -18,7 +18,7 @@ export function QuickNavMenu() {
     { id: 'novelas-finished', name: 'Novelas Finalizadas', icon: <CheckCircle2 className="h-4 w-4" /> },
     { id: 'movies', name: 'Películas', icon: <Clapperboard className="h-4 w-4" /> },
     { id: 'tv-shows', name: 'Series', icon: <Monitor className="h-4 w-4" /> },
-    { id: 'anime', name: 'Anime', icon: <Sparkles className="h-4 w-4" /> },
+    { id: 'anime', name: 'Anime', icon: <Zap className="h-4 w-4" /> },
   ];
 
   useEffect(() => {
