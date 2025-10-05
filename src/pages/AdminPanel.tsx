@@ -337,45 +337,48 @@ export function AdminPanel() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 shadow-lg">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="bg-white/20 p-3 rounded-xl mr-4">
-              <Settings className="h-8 w-8" />
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 md:p-6 shadow-lg">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-4 md:mb-0">
+            <div className="flex items-center">
+              <div className="bg-white/20 p-2 md:p-3 rounded-xl mr-2 md:mr-4">
+                <Settings className="h-6 w-6 md:h-8 md:w-8" />
+              </div>
+              <div>
+                <h1 className="text-lg md:text-2xl font-bold">Panel de Administración</h1>
+                <p className="text-xs md:text-sm text-blue-100 hidden sm:block">TV a la Carta - Sistema de Gestión</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold">Panel de Administración</h1>
-              <p className="text-blue-100">TV a la Carta - Sistema de Gestión</p>
+            <div className="flex items-center space-x-2">
+              <Link
+                to="/"
+                className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors flex items-center"
+                title="Ir al sitio"
+              >
+                <Home className="h-4 w-4" />
+              </Link>
+              <button
+                onClick={logout}
+                className="bg-red-500 hover:bg-red-600 p-2 rounded-lg transition-colors flex items-center"
+                title="Cerrar Sesión"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
-            <div className="text-right">
-              <p className="text-sm opacity-90">Versión {state.systemConfig.version}</p>
-              <p className="text-xs opacity-75">
-                Última sincronización: {new Date(state.syncStatus.lastSync).toLocaleTimeString()}
-              </p>
-            </div>
-            <Link
-              to="/"
-              className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-colors flex items-center"
-            >
-              <Home className="h-4 w-4 mr-2" />
-              Ir al sitio
-            </Link>
-            <button
-              onClick={logout}
-              className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition-colors flex items-center"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Cerrar Sesión
-            </button>
+          <div className="text-xs md:text-sm opacity-90 mt-2 flex flex-wrap gap-2 md:gap-4">
+            <span>v{state.systemConfig.version}</span>
+            <span className="hidden sm:inline">•</span>
+            <span className="hidden sm:inline">
+              Última sync: {new Date(state.syncStatus.lastSync).toLocaleTimeString()}
+            </span>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-4 md:p-6">
         {/* Stats Dashboard */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border border-blue-200">
             <div className="flex items-center justify-between">
               <div>
@@ -422,26 +425,28 @@ export function AdminPanel() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-8">
-          <div className="flex flex-wrap border-b border-gray-200">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 md:mb-8 overflow-hidden">
+          <div className="flex overflow-x-auto border-b border-gray-200 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
             {[
-              { id: 'novels', label: 'Gestión de Novelas', icon: BookOpen },
-              { id: 'zones', label: 'Zonas de Entrega', icon: MapPin },
-              { id: 'prices', label: 'Configuración de Precios', icon: DollarSign },
-              { id: 'notifications', label: 'Notificaciones', icon: Bell },
-              { id: 'system', label: 'Sistema', icon: Settings }
+              { id: 'novels', label: 'Novelas', fullLabel: 'Gestión de Novelas', icon: BookOpen },
+              { id: 'zones', label: 'Zonas', fullLabel: 'Zonas de Entrega', icon: MapPin },
+              { id: 'prices', label: 'Precios', fullLabel: 'Configuración de Precios', icon: DollarSign },
+              { id: 'notifications', label: 'Notif.', fullLabel: 'Notificaciones', icon: Bell },
+              { id: 'system', label: 'Sistema', fullLabel: 'Sistema', icon: Settings }
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center px-6 py-4 font-medium transition-colors ${
+                className={`flex items-center px-3 md:px-6 py-3 md:py-4 font-medium transition-colors whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
                     : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
                 }`}
+                title={tab.fullLabel}
               >
-                <tab.icon className="h-5 w-5 mr-2" />
-                <span className="hidden sm:inline">{tab.label}</span>
+                <tab.icon className="h-4 w-4 md:h-5 md:w-5 md:mr-2" />
+                <span className="hidden md:inline">{tab.fullLabel}</span>
+                <span className="md:hidden ml-1 text-xs">{tab.label}</span>
               </button>
             ))}
           </div>
@@ -471,12 +476,12 @@ export function AdminPanel() {
 
               {/* Novel Form */}
               {showNovelForm && (
-                <div className="bg-gray-50 rounded-xl p-6 mb-6 border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <div className="bg-gray-50 rounded-xl p-4 md:p-6 mb-6 border border-gray-200">
+                  <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4">
                     {editingNovel ? 'Editar Novela' : 'Agregar Nueva Novela'}
                   </h3>
-                  
-                  <form onSubmit={handleNovelSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                  <form onSubmit={handleNovelSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Título *
@@ -570,7 +575,7 @@ export function AdminPanel() {
                       </select>
                     </div>
                     
-                    <div className="md:col-span-2">
+                    <div className="lg:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         URL de Imagen
                       </label>
@@ -582,8 +587,8 @@ export function AdminPanel() {
                         placeholder="https://ejemplo.com/imagen.jpg"
                       />
                     </div>
-                    
-                    <div className="md:col-span-2">
+
+                    <div className="lg:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Descripción
                       </label>
@@ -595,11 +600,11 @@ export function AdminPanel() {
                         placeholder="Descripción de la novela..."
                       />
                     </div>
-                    
-                    <div className="md:col-span-2 flex space-x-4">
+
+                    <div className="lg:col-span-2 flex flex-col sm:flex-row gap-3 sm:space-x-4">
                       <button
                         type="submit"
-                        className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg flex items-center transition-colors"
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg flex items-center justify-center transition-colors w-full sm:w-auto"
                       >
                         <Save className="h-4 w-4 mr-2" />
                         {editingNovel ? 'Actualizar' : 'Agregar'} Novela
@@ -611,7 +616,7 @@ export function AdminPanel() {
                           setEditingNovel(null);
                           resetNovelForm();
                         }}
-                        className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg flex items-center transition-colors"
+                        className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg flex items-center justify-center transition-colors w-full sm:w-auto sm:ml-0"
                       >
                         <X className="h-4 w-4 mr-2" />
                         Cancelar
@@ -631,20 +636,20 @@ export function AdminPanel() {
                   </div>
                 ) : (
                   state.novels.map((novel) => (
-                    <div key={novel.id} className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center mb-2">
-                            <h3 className="text-lg font-bold text-gray-900 mr-3">{novel.titulo}</h3>
-                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                              novel.estado === 'transmision' 
-                                ? 'bg-red-100 text-red-700' 
+                    <div key={novel.id} className="bg-gray-50 rounded-xl p-4 md:p-6 border border-gray-200">
+                      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                        <div className="flex-1 w-full">
+                          <div className="flex flex-col sm:flex-row sm:items-center mb-2 gap-2">
+                            <h3 className="text-base md:text-lg font-bold text-gray-900">{novel.titulo}</h3>
+                            <span className={`px-2 py-1 rounded-full text-xs font-bold w-fit ${
+                              novel.estado === 'transmision'
+                                ? 'bg-red-100 text-red-700'
                                 : 'bg-green-100 text-green-700'
                             }`}>
                               {novel.estado === 'transmision' ? '📡 En Transmisión' : '✅ Finalizada'}
                             </span>
                           </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4 text-sm text-gray-600">
                             <div>
                               <span className="font-medium">Género:</span> {novel.genero}
                             </div>
@@ -659,18 +664,18 @@ export function AdminPanel() {
                             </div>
                           </div>
                           {novel.descripcion && (
-                            <p className="text-gray-600 mt-2 text-sm">{novel.descripcion}</p>
+                            <p className="text-gray-600 mt-2 text-xs md:text-sm line-clamp-2">{novel.descripcion}</p>
                           )}
-                          <div className="mt-3 text-sm">
-                            <span className="font-medium text-green-600">
+                          <div className="mt-3 text-xs md:text-sm">
+                            <span className="font-medium text-green-600 block sm:inline">
                               Precio: ${(novel.capitulos * state.prices.novelPricePerChapter).toLocaleString()} CUP
                             </span>
-                            <span className="text-gray-500 ml-2">
+                            <span className="text-gray-500 block sm:inline sm:ml-2">
                               (${state.prices.novelPricePerChapter} CUP × {novel.capitulos} cap.)
                             </span>
                           </div>
                         </div>
-                        <div className="flex space-x-2 ml-4">
+                        <div className="flex space-x-2 w-full sm:w-auto justify-end">
                           <button
                             onClick={() => startEditingNovel(novel)}
                             className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg transition-colors"
@@ -721,12 +726,12 @@ export function AdminPanel() {
 
               {/* Zone Form */}
               {showZoneForm && (
-                <div className="bg-gray-50 rounded-xl p-6 mb-6 border border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <div className="bg-gray-50 rounded-xl p-4 md:p-6 mb-6 border border-gray-200">
+                  <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-4">
                     {editingZone ? 'Editar Zona' : 'Agregar Nueva Zona'}
                   </h3>
-                  
-                  <form onSubmit={handleZoneSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                  <form onSubmit={handleZoneSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Nombre de la Zona *
@@ -755,10 +760,10 @@ export function AdminPanel() {
                       />
                     </div>
                     
-                    <div className="md:col-span-2 flex space-x-4">
+                    <div className="lg:col-span-2 flex flex-col sm:flex-row gap-3 sm:space-x-4">
                       <button
                         type="submit"
-                        className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg flex items-center transition-colors"
+                        className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg flex items-center justify-center transition-colors w-full sm:w-auto"
                       >
                         <Save className="h-4 w-4 mr-2" />
                         {editingZone ? 'Actualizar' : 'Agregar'} Zona
@@ -770,7 +775,7 @@ export function AdminPanel() {
                           setEditingZone(null);
                           resetZoneForm();
                         }}
-                        className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg flex items-center transition-colors"
+                        className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg flex items-center justify-center transition-colors w-full sm:w-auto sm:ml-0"
                       >
                         <X className="h-4 w-4 mr-2" />
                         Cancelar
@@ -790,15 +795,15 @@ export function AdminPanel() {
                   </div>
                 ) : (
                   state.deliveryZones.map((zone) => (
-                    <div key={zone.id} className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-lg font-bold text-gray-900">{zone.name}</h3>
-                          <p className="text-green-600 font-semibold">
+                    <div key={zone.id} className="bg-gray-50 rounded-xl p-4 md:p-6 border border-gray-200">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div className="flex-1">
+                          <h3 className="text-base md:text-lg font-bold text-gray-900">{zone.name}</h3>
+                          <p className="text-green-600 font-semibold text-sm md:text-base">
                             Costo: ${zone.cost.toLocaleString()} CUP
                           </p>
                         </div>
-                        <div className="flex space-x-2">
+                        <div className="flex space-x-2 w-full sm:w-auto justify-end">
                           <button
                             onClick={() => startEditingZone(zone)}
                             className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg transition-colors"
@@ -833,7 +838,7 @@ export function AdminPanel() {
               Configuración de Precios
             </h2>
             
-            <form onSubmit={handlePricesUpdate} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form onSubmit={handlePricesUpdate} className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Precio de Películas (CUP)
@@ -959,9 +964,9 @@ export function AdminPanel() {
                 Configuración del Sistema
               </h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Información del Sistema</h3>
+                  <h3 className="text-base md:text-lg font-semibold text-gray-900">Información del Sistema</h3>
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
@@ -989,7 +994,7 @@ export function AdminPanel() {
                 </div>
                 
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Acciones del Sistema</h3>
+                  <h3 className="text-base md:text-lg font-semibold text-gray-900">Acciones del Sistema</h3>
                   <div className="space-y-3">
                     <button
                       onClick={handleExport}
@@ -1031,17 +1036,17 @@ export function AdminPanel() {
         {/* Import Modal */}
         {showImportModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl w-full max-w-2xl p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-gray-900">Importar Configuración</h3>
+            <div className="bg-white rounded-2xl w-full max-w-2xl p-4 md:p-6 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4 md:mb-6">
+                <h3 className="text-lg md:text-xl font-bold text-gray-900">Importar Configuración</h3>
                 <button
                   onClick={() => setShowImportModal(false)}
                   className="text-gray-500 hover:text-gray-700"
                 >
-                  <X className="h-6 w-6" />
+                  <X className="h-5 w-5 md:h-6 md:w-6" />
                 </button>
               </div>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1050,15 +1055,15 @@ export function AdminPanel() {
                   <textarea
                     value={importData}
                     onChange={(e) => setImportData(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-64"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-48 md:h-64 text-sm"
                     placeholder="Pega aquí la configuración JSON exportada..."
                   />
                 </div>
-                
-                <div className="flex space-x-4">
+
+                <div className="flex flex-col sm:flex-row gap-3 sm:space-x-4">
                   <button
                     onClick={handleImport}
-                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg flex items-center transition-colors"
+                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg flex items-center justify-center transition-colors w-full sm:w-auto"
                   >
                     <Upload className="h-4 w-4 mr-2" />
                     Importar
@@ -1068,7 +1073,7 @@ export function AdminPanel() {
                       setShowImportModal(false);
                       setImportData('');
                     }}
-                    className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg flex items-center transition-colors"
+                    className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg flex items-center justify-center transition-colors w-full sm:w-auto sm:ml-0"
                   >
                     <X className="h-4 w-4 mr-2" />
                     Cancelar
