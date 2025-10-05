@@ -1,20 +1,67 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import JSZip from 'jszip';
 
-interface Novel {
-  id: number;
-  titulo: string;
-  genero: string;
-  capitulos: number;
-  año: number;
-  descripcion?: string;
-  pais?: string;
-  imagen?: string;
-  estado?: 'transmision' | 'finalizada';
-  createdAt: string;
-  updatedAt: string;
+// CONFIGURACIÓN EMBEBIDA - Generada automáticamente
+const EMBEDDED_CONFIG = {
+  "version": "2.1.0",
+  "prices": {
+    "moviePrice": 100,
+    "seriesPrice": 300,
+    "transferFeePercentage": 10,
+    "novelPricePerChapter": 5
+  },
+  "deliveryZones": [],
+  "novels": [
+    {
+      "titulo": "Salvaje",
+      "genero": "Romance",
+      "capitulos": 22,
+      "año": 2023,
+      "descripcion": "Salvaje novela turca, Yaman es un joven que ha vivido en las calles desde que tiene uso de razón. Ha tenido una vida dura, teniendo que luchar para sobrevivir y encontrar comida. Afortunadamente, siempre ha tenido a su lado tres amigos que se convirtieron en su familia, Cesur, Asi y Umut.\n\nSe cruzaron cuando eran apenas unos niños y a partir de ahí no se separaron. De manera inexplicable ninguno sabe nada de su pasado o porque están en la calle, sin importar su pasado o traumas decidieron confiar entre ellos y seguir adelante.\n\nLa gran preocupación del grupo es cumplir con el tratamiento de Umut, quien no puede caminar y el “Doctor milagro” es su única esperanza, pero el médico vive en el extranjero y ve a pocos pacientes una vez al año cuando llega al país. \n\nYaman cometerá el mayor error de su vida, entrando a una mansión que probablemente podría ser la de su familia, pero se le cae la cara de vergüenza ya que ha atacado a quien sería su hermano y apuñalado a su madre. Ahora su familia y la policía lo buscan.\n\nLa vida de Yaman comenzará a dar un giro inesperado cuando se cruce con Ates y su novia Ruya. Estos salían de un club nocturno. A partir de ahí una serie de eventos golpearán la vida de Yaman y lo llevarán al límite. Salvaje serie turca.",
+      "pais": "Turquía",
+      "imagen": "https://f005.backblazeb2.com/file/120000/tvalacarta/salvaje.jpeg",
+      "estado": "transmision",
+      "id": 1759655434967,
+      "createdAt": "2025-10-05T09:10:34.967Z",
+      "updatedAt": "2025-10-05T09:10:34.967Z"
+    }
+  ],
+  "settings": {
+    "version": "2.1.0",
+    "autoSync": true,
+    "syncInterval": 300000,
+    "enableNotifications": true,
+    "maxNotifications": 100,
+    "metadata": {
+      "totalOrders": 0,
+      "totalRevenue": 0,
+      "lastOrderDate": "",
+      "systemUptime": "2025-10-05T09:09:48.410Z"
+    }
+  },
+  "syncStatus": {
+    "lastSync": "2025-10-05T09:10:49.696Z",
+    "isOnline": true,
+    "pendingChanges": 0
+  },
+  "exportDate": "2025-10-05T09:10:50.241Z"
+};
+
+// CREDENCIALES DE ACCESO (CONFIGURABLES)
+const ADMIN_CREDENTIALS = {
+  username: 'admin',
+  password: 'tvalacarta2024'
+};
+
+// Types
+export interface PriceConfig {
+  moviePrice: number;
+  seriesPrice: number;
+  transferFeePercentage: number;
+  novelPricePerChapter: number;
 }
 
-interface DeliveryZone {
+export interface DeliveryZone {
   id: number;
   name: string;
   cost: number;
@@ -22,30 +69,46 @@ interface DeliveryZone {
   updatedAt: string;
 }
 
-interface Prices {
-  moviePrice: number;
-  seriesPrice: number;
-  transferFeePercentage: number;
-  novelPricePerChapter: number;
+export interface Novel {
+  id: number;
+  titulo: string;
+  genero: string;
+  capitulos: number;
+  año: number;
+  descripcion?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface Notification {
+export interface Notification {
   id: string;
+  type: 'success' | 'error' | 'warning' | 'info';
+  title: string;
   message: string;
-  type: 'success' | 'error' | 'info' | 'warning';
-  timestamp: Date;
-  read: boolean;
+  timestamp: string;
+  section: string;
+  action: string;
 }
 
-interface SystemConfig {
+export interface SyncStatus {
+  lastSync: string;
+  isOnline: boolean;
+  pendingChanges: number;
+}
+
+export interface SystemConfig {
   version: string;
-  lastBackup?: string;
-  autoSync: boolean;
-  syncInterval: number;
-  enableNotifications: boolean;
-  maxNotifications: number;
-  settings?: any;
-  metadata?: {
+  lastExport: string;
+  prices: PriceConfig;
+  deliveryZones: DeliveryZone[];
+  novels: Novel[];
+  settings: {
+    autoSync: boolean;
+    syncInterval: number;
+    enableNotifications: boolean;
+    maxNotifications: number;
+  };
+  metadata: {
     totalOrders: number;
     totalRevenue: number;
     lastOrderDate: string;
@@ -53,522 +116,782 @@ interface SystemConfig {
   };
 }
 
-interface SyncStatus {
-  lastSync: string;
-  isOnline: boolean;
-  pendingChanges: number;
-}
-
-interface AdminState {
+export interface AdminState {
   isAuthenticated: boolean;
-  novels: Novel[];
+  prices: PriceConfig;
   deliveryZones: DeliveryZone[];
-  prices: Prices;
+  novels: Novel[];
   notifications: Notification[];
-  systemConfig: SystemConfig;
   syncStatus: SyncStatus;
+  systemConfig: SystemConfig;
 }
 
 type AdminAction = 
-  | { type: 'LOGIN' }
+  | { type: 'LOGIN'; payload: { username: string; password: string } }
   | { type: 'LOGOUT' }
-  | { type: 'ADD_NOVEL'; payload: Novel }
-  | { type: 'UPDATE_NOVEL'; payload: Novel }
-  | { type: 'DELETE_NOVEL'; payload: number }
-  | { type: 'ADD_DELIVERY_ZONE'; payload: DeliveryZone }
+  | { type: 'UPDATE_PRICES'; payload: PriceConfig }
+  | { type: 'ADD_DELIVERY_ZONE'; payload: Omit<DeliveryZone, 'id' | 'createdAt' | 'updatedAt'> }
   | { type: 'UPDATE_DELIVERY_ZONE'; payload: DeliveryZone }
   | { type: 'DELETE_DELIVERY_ZONE'; payload: number }
-  | { type: 'UPDATE_PRICES'; payload: Prices }
-  | { type: 'ADD_NOTIFICATION'; payload: Notification }
-  | { type: 'MARK_NOTIFICATION_READ'; payload: string }
+  | { type: 'ADD_NOVEL'; payload: Omit<Novel, 'id' | 'createdAt' | 'updatedAt'> }
+  | { type: 'UPDATE_NOVEL'; payload: Novel }
+  | { type: 'DELETE_NOVEL'; payload: number }
+  | { type: 'ADD_NOTIFICATION'; payload: Omit<Notification, 'id' | 'timestamp'> }
   | { type: 'CLEAR_NOTIFICATIONS' }
-  | { type: 'UPDATE_SYSTEM_CONFIG'; payload: Partial<SystemConfig> }
-  | { type: 'LOAD_STATE'; payload: Partial<AdminState> }
-  | { type: 'UPDATE_SYNC_STATUS'; payload: Partial<SyncStatus> };
+  | { type: 'UPDATE_SYNC_STATUS'; payload: Partial<SyncStatus> }
+  | { type: 'SYNC_STATE'; payload: Partial<AdminState> }
+  | { type: 'LOAD_SYSTEM_CONFIG'; payload: SystemConfig }
+  | { type: 'UPDATE_SYSTEM_CONFIG'; payload: Partial<SystemConfig> };
 
 interface AdminContextType {
   state: AdminState;
   login: (username: string, password: string) => boolean;
   logout: () => void;
-  addNovel: (novel: Omit<Novel, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateNovel: (novel: Novel) => void;
-  deleteNovel: (id: number) => void;
+  updatePrices: (prices: PriceConfig) => void;
   addDeliveryZone: (zone: Omit<DeliveryZone, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateDeliveryZone: (zone: DeliveryZone) => void;
   deleteDeliveryZone: (id: number) => void;
-  updatePrices: (prices: Prices) => void;
-  addNotification: (message: string, type: Notification['type']) => void;
-  markNotificationRead: (id: string) => void;
+  addNovel: (novel: Omit<Novel, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateNovel: (novel: Novel) => void;
+  deleteNovel: (id: number) => void;
+  addNotification: (notification: Omit<Notification, 'id' | 'timestamp'>) => void;
   clearNotifications: () => void;
-  updateSystemConfig: (config: Partial<SystemConfig>) => void;
-  exportSystemConfig: () => string;
-  importSystemConfig: (configJson: string) => boolean;
-  getAvailableCountries: () => string[];
+  exportSystemConfig: () => void;
+  importSystemConfig: (config: SystemConfig) => void;
+  exportCompleteSourceCode: () => void;
+  syncWithRemote: () => Promise<void>;
+  broadcastChange: (change: any) => void;
+  syncAllSections: () => Promise<void>;
 }
 
-const AdminContext = createContext<AdminContextType | undefined>(undefined);
-
+// Initial state with embedded configuration
 const initialState: AdminState = {
   isAuthenticated: false,
-  novels: [],
-  deliveryZones: [],
-  prices: {
-    moviePrice: 80,
-    seriesPrice: 300,
-    transferFeePercentage: 10,
-    novelPricePerChapter: 5,
-  },
+  prices: EMBEDDED_CONFIG.prices,
+  deliveryZones: EMBEDDED_CONFIG.deliveryZones,
+  novels: EMBEDDED_CONFIG.novels,
   notifications: [],
-  systemConfig: {
-    version: '2.1.0',
-    autoSync: true,
-    syncInterval: 300000,
-    enableNotifications: true,
-    maxNotifications: 100,
-    metadata: {
-      totalOrders: 0,
-      totalRevenue: 0,
-      lastOrderDate: '',
-      systemUptime: new Date().toISOString(),
-    }
-  },
   syncStatus: {
     lastSync: new Date().toISOString(),
     isOnline: true,
     pendingChanges: 0,
-  }
+  },
+  systemConfig: EMBEDDED_CONFIG,
 };
 
+// Reducer
 function adminReducer(state: AdminState, action: AdminAction): AdminState {
   switch (action.type) {
     case 'LOGIN':
-      return { ...state, isAuthenticated: true };
+      if (action.payload.username === ADMIN_CREDENTIALS.username && action.payload.password === ADMIN_CREDENTIALS.password) {
+        return { ...state, isAuthenticated: true };
+      }
+      return state;
+
     case 'LOGOUT':
       return { ...state, isAuthenticated: false };
-    case 'ADD_NOVEL':
-      return {
-        ...state,
-        novels: [...state.novels, action.payload],
-        syncStatus: { ...state.syncStatus, pendingChanges: state.syncStatus.pendingChanges + 1 }
-      };
-    case 'UPDATE_NOVEL':
-      return {
-        ...state,
-        novels: state.novels.map(novel => 
-          novel.id === action.payload.id ? action.payload : novel
-        ),
-        syncStatus: { ...state.syncStatus, pendingChanges: state.syncStatus.pendingChanges + 1 }
-      };
-    case 'DELETE_NOVEL':
-      return {
-        ...state,
-        novels: state.novels.filter(novel => novel.id !== action.payload),
-        syncStatus: { ...state.syncStatus, pendingChanges: state.syncStatus.pendingChanges + 1 }
-      };
-    case 'ADD_DELIVERY_ZONE':
-      return {
-        ...state,
-        deliveryZones: [...state.deliveryZones, action.payload],
-        syncStatus: { ...state.syncStatus, pendingChanges: state.syncStatus.pendingChanges + 1 }
-      };
-    case 'UPDATE_DELIVERY_ZONE':
-      return {
-        ...state,
-        deliveryZones: state.deliveryZones.map(zone => 
-          zone.id === action.payload.id ? action.payload : zone
-        ),
-        syncStatus: { ...state.syncStatus, pendingChanges: state.syncStatus.pendingChanges + 1 }
-      };
-    case 'DELETE_DELIVERY_ZONE':
-      return {
-        ...state,
-        deliveryZones: state.deliveryZones.filter(zone => zone.id !== action.payload),
-        syncStatus: { ...state.syncStatus, pendingChanges: state.syncStatus.pendingChanges + 1 }
-      };
+
     case 'UPDATE_PRICES':
+      const updatedConfig = {
+        ...state.systemConfig,
+        prices: action.payload,
+        lastExport: new Date().toISOString(),
+      };
       return {
         ...state,
         prices: action.payload,
+        systemConfig: updatedConfig,
         syncStatus: { ...state.syncStatus, pendingChanges: state.syncStatus.pendingChanges + 1 }
       };
+
+    case 'ADD_DELIVERY_ZONE':
+      const newZone: DeliveryZone = {
+        ...action.payload,
+        id: Date.now(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      const configWithNewZone = {
+        ...state.systemConfig,
+        deliveryZones: [...state.systemConfig.deliveryZones, newZone],
+        lastExport: new Date().toISOString(),
+      };
+      return {
+        ...state,
+        deliveryZones: [...state.deliveryZones, newZone],
+        systemConfig: configWithNewZone,
+        syncStatus: { ...state.syncStatus, pendingChanges: state.syncStatus.pendingChanges + 1 }
+      };
+
+    case 'UPDATE_DELIVERY_ZONE':
+      const updatedZones = state.deliveryZones.map(zone =>
+        zone.id === action.payload.id
+          ? { ...action.payload, updatedAt: new Date().toISOString() }
+          : zone
+      );
+      const configWithUpdatedZone = {
+        ...state.systemConfig,
+        deliveryZones: updatedZones,
+        lastExport: new Date().toISOString(),
+      };
+      return {
+        ...state,
+        deliveryZones: updatedZones,
+        systemConfig: configWithUpdatedZone,
+        syncStatus: { ...state.syncStatus, pendingChanges: state.syncStatus.pendingChanges + 1 }
+      };
+
+    case 'DELETE_DELIVERY_ZONE':
+      const filteredZones = state.deliveryZones.filter(zone => zone.id !== action.payload);
+      const configWithDeletedZone = {
+        ...state.systemConfig,
+        deliveryZones: filteredZones,
+        lastExport: new Date().toISOString(),
+      };
+      return {
+        ...state,
+        deliveryZones: filteredZones,
+        systemConfig: configWithDeletedZone,
+        syncStatus: { ...state.syncStatus, pendingChanges: state.syncStatus.pendingChanges + 1 }
+      };
+
+    case 'ADD_NOVEL':
+      const newNovel: Novel = {
+        ...action.payload,
+        id: Date.now(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      const configWithNewNovel = {
+        ...state.systemConfig,
+        novels: [...state.systemConfig.novels, newNovel],
+        lastExport: new Date().toISOString(),
+      };
+      return {
+        ...state,
+        novels: [...state.novels, newNovel],
+        systemConfig: configWithNewNovel,
+        syncStatus: { ...state.syncStatus, pendingChanges: state.syncStatus.pendingChanges + 1 }
+      };
+
+    case 'UPDATE_NOVEL':
+      const updatedNovels = state.novels.map(novel =>
+        novel.id === action.payload.id
+          ? { ...action.payload, updatedAt: new Date().toISOString() }
+          : novel
+      );
+      const configWithUpdatedNovel = {
+        ...state.systemConfig,
+        novels: updatedNovels,
+        lastExport: new Date().toISOString(),
+      };
+      return {
+        ...state,
+        novels: updatedNovels,
+        systemConfig: configWithUpdatedNovel,
+        syncStatus: { ...state.syncStatus, pendingChanges: state.syncStatus.pendingChanges + 1 }
+      };
+
+    case 'DELETE_NOVEL':
+      const filteredNovels = state.novels.filter(novel => novel.id !== action.payload);
+      const configWithDeletedNovel = {
+        ...state.systemConfig,
+        novels: filteredNovels,
+        lastExport: new Date().toISOString(),
+      };
+      return {
+        ...state,
+        novels: filteredNovels,
+        systemConfig: configWithDeletedNovel,
+        syncStatus: { ...state.syncStatus, pendingChanges: state.syncStatus.pendingChanges + 1 }
+      };
+
     case 'ADD_NOTIFICATION':
-      const newNotifications = [action.payload, ...state.notifications];
+      const notification: Notification = {
+        ...action.payload,
+        id: Date.now().toString(),
+        timestamp: new Date().toISOString(),
+      };
       return {
         ...state,
-        notifications: newNotifications.slice(0, state.systemConfig.maxNotifications)
+        notifications: [notification, ...state.notifications].slice(0, state.systemConfig.settings.maxNotifications),
       };
-    case 'MARK_NOTIFICATION_READ':
-      return {
-        ...state,
-        notifications: state.notifications.map(notification =>
-          notification.id === action.payload 
-            ? { ...notification, read: true }
-            : notification
-        )
-      };
+
     case 'CLEAR_NOTIFICATIONS':
       return {
         ...state,
-        notifications: []
+        notifications: [],
       };
-    case 'UPDATE_SYSTEM_CONFIG':
-      return {
-        ...state,
-        systemConfig: { ...state.systemConfig, ...action.payload }
-      };
-    case 'LOAD_STATE':
-      return { ...state, ...action.payload };
+
     case 'UPDATE_SYNC_STATUS':
       return {
         ...state,
-        syncStatus: { ...state.syncStatus, ...action.payload }
+        syncStatus: { ...state.syncStatus, ...action.payload },
       };
+
+    case 'LOAD_SYSTEM_CONFIG':
+      return {
+        ...state,
+        prices: action.payload.prices,
+        deliveryZones: action.payload.deliveryZones,
+        novels: action.payload.novels,
+        systemConfig: action.payload,
+        syncStatus: { ...state.syncStatus, lastSync: new Date().toISOString(), pendingChanges: 0 }
+      };
+
+    case 'UPDATE_SYSTEM_CONFIG':
+      const newSystemConfig = { ...state.systemConfig, ...action.payload };
+      return {
+        ...state,
+        systemConfig: newSystemConfig,
+      };
+
+    case 'SYNC_STATE':
+      return {
+        ...state,
+        ...action.payload,
+        syncStatus: { ...state.syncStatus, lastSync: new Date().toISOString(), pendingChanges: 0 }
+      };
+
     default:
       return state;
   }
 }
 
+// Context creation
+const AdminContext = createContext<AdminContextType | undefined>(undefined);
+
+// Real-time sync service
+class RealTimeSyncService {
+  private listeners: Set<(data: any) => void> = new Set();
+  private syncInterval: NodeJS.Timeout | null = null;
+  private storageKey = 'admin_system_state';
+  private configKey = 'system_config';
+
+  constructor() {
+    this.initializeSync();
+  }
+
+  private initializeSync() {
+    window.addEventListener('storage', this.handleStorageChange.bind(this));
+    this.syncInterval = setInterval(() => {
+      this.checkForUpdates();
+    }, 5000);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        this.checkForUpdates();
+      }
+    });
+  }
+
+  private handleStorageChange(event: StorageEvent) {
+    if ((event.key === this.storageKey || event.key === this.configKey) && event.newValue) {
+      try {
+        const newState = JSON.parse(event.newValue);
+        this.notifyListeners(newState);
+      } catch (error) {
+        console.error('Error parsing sync data:', error);
+      }
+    }
+  }
+
+  private checkForUpdates() {
+    try {
+      const stored = localStorage.getItem(this.storageKey);
+      const config = localStorage.getItem(this.configKey);
+      
+      if (stored) {
+        const storedState = JSON.parse(stored);
+        this.notifyListeners(storedState);
+      }
+      
+      if (config) {
+        const configData = JSON.parse(config);
+        this.notifyListeners({ systemConfig: configData });
+      }
+    } catch (error) {
+      console.error('Error checking for updates:', error);
+    }
+  }
+
+  subscribe(callback: (data: any) => void) {
+    this.listeners.add(callback);
+    return () => this.listeners.delete(callback);
+  }
+
+  broadcast(state: AdminState) {
+    try {
+      const syncData = {
+        ...state,
+        timestamp: new Date().toISOString(),
+      };
+      localStorage.setItem(this.storageKey, JSON.stringify(syncData));
+      localStorage.setItem(this.configKey, JSON.stringify(state.systemConfig));
+      this.notifyListeners(syncData);
+    } catch (error) {
+      console.error('Error broadcasting state:', error);
+    }
+  }
+
+  private notifyListeners(data: any) {
+    this.listeners.forEach(callback => {
+      try {
+        callback(data);
+      } catch (error) {
+        console.error('Error in sync listener:', error);
+      }
+    });
+  }
+
+  destroy() {
+    if (this.syncInterval) {
+      clearInterval(this.syncInterval);
+    }
+    window.removeEventListener('storage', this.handleStorageChange.bind(this));
+    this.listeners.clear();
+  }
+}
+
+// Provider component
 export function AdminProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(adminReducer, initialState);
+  const [syncService] = React.useState(() => new RealTimeSyncService());
 
-  // Países disponibles con Cuba incluido
-  const availableCountries = [
-    'Cuba',
-    'Turquía',
-    'México',
-    'Brasil',
-    'Colombia',
-    'Argentina',
-    'España',
-    'Estados Unidos',
-    'Corea del Sur',
-    'India',
-    'Reino Unido',
-    'Francia',
-    'Italia',
-    'Alemania',
-    'Japón',
-    'China',
-    'Rusia'
-  ];
-
-  // Load state from localStorage on mount
+  // Load system config on startup
   useEffect(() => {
-    const loadState = () => {
-      try {
-        const savedState = localStorage.getItem('admin_system_state');
-        if (savedState) {
-          const parsedState = JSON.parse(savedState);
-          dispatch({ type: 'LOAD_STATE', payload: parsedState });
-        }
-      } catch (error) {
-        console.error('Error loading admin state:', error);
+    try {
+      const storedConfig = localStorage.getItem('system_config');
+      if (storedConfig) {
+        const config = JSON.parse(storedConfig);
+        dispatch({ type: 'LOAD_SYSTEM_CONFIG', payload: config });
       }
-    };
-
-    loadState();
+      
+      const stored = localStorage.getItem('admin_system_state');
+      if (stored) {
+        const storedState = JSON.parse(stored);
+        dispatch({ type: 'SYNC_STATE', payload: storedState });
+      }
+    } catch (error) {
+      console.error('Error loading initial state:', error);
+    }
   }, []);
 
-  // Save state to localStorage whenever it changes
+  // Save state changes
   useEffect(() => {
     try {
       localStorage.setItem('admin_system_state', JSON.stringify(state));
-      
-      // Also save to system_config for compatibility
-      const systemConfig = {
-        version: state.systemConfig.version,
-        lastExport: new Date().toISOString(),
-        prices: state.prices,
-        deliveryZones: state.deliveryZones,
-        novels: state.novels,
-        settings: state.systemConfig,
-        notifications: state.notifications,
-        syncStatus: state.syncStatus
-      };
-      localStorage.setItem('system_config', JSON.stringify(systemConfig));
-
-      // Emit events for real-time synchronization
-      const event = new CustomEvent('admin_state_change', {
-        detail: { 
-          state: state,
-          timestamp: new Date().toISOString()
-        }
-      });
-      window.dispatchEvent(event);
-
+      localStorage.setItem('system_config', JSON.stringify(state.systemConfig));
+      syncService.broadcast(state);
     } catch (error) {
-      console.error('Error saving admin state:', error);
+      console.error('Error saving state:', error);
     }
-  }, [state]);
+  }, [state, syncService]);
 
-  // Real-time sync with other components
+  // Real-time sync listener
   useEffect(() => {
-    const syncInterval = setInterval(() => {
-      if (state.syncStatus.pendingChanges > 0) {
-        dispatch({ 
-          type: 'UPDATE_SYNC_STATUS', 
-          payload: { 
-            lastSync: new Date().toISOString(),
-            pendingChanges: 0
-          }
-        });
+    const unsubscribe = syncService.subscribe((syncedState) => {
+      if (JSON.stringify(syncedState) !== JSON.stringify(state)) {
+        dispatch({ type: 'SYNC_STATE', payload: syncedState });
       }
-    }, 5000); // Sync every 5 seconds
+    });
+    return unsubscribe;
+  }, [syncService, state]);
 
-    return () => clearInterval(syncInterval);
-  }, [state.syncStatus.pendingChanges]);
+  useEffect(() => {
+    return () => {
+      syncService.destroy();
+    };
+  }, [syncService]);
 
+  // Context methods implementation
   const login = (username: string, password: string): boolean => {
-    const validUsername = btoa('admin');
-    const validPassword = btoa('admin123');
-
-    if (btoa(username) === validUsername && btoa(password) === validPassword) {
-      dispatch({ type: 'LOGIN' });
-      addNotification('Sesión iniciada correctamente', 'success');
-      return true;
+    dispatch({ type: 'LOGIN', payload: { username, password } });
+    const success = username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password;
+    if (success) {
+      addNotification({
+        type: 'success',
+        title: 'Inicio de sesión exitoso',
+        message: 'Bienvenido al panel de administración',
+        section: 'Autenticación',
+        action: 'login'
+      });
     }
-    return false;
+    return success;
   };
 
   const logout = () => {
     dispatch({ type: 'LOGOUT' });
-    addNotification('Sesión cerrada', 'info');
-  };
-
-  const addNovel = (novelData: Omit<Novel, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const novel: Novel = {
-      ...novelData,
-      id: Date.now(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    dispatch({ type: 'ADD_NOVEL', payload: novel });
-    addNotification(`Novela "${novel.titulo}" agregada correctamente`, 'success');
-    
-    // Emit specific event for novel addition
-    const event = new CustomEvent('admin_state_change', {
-      detail: { 
-        type: 'novel_add',
-        data: novel,
-        timestamp: new Date().toISOString()
-      }
+    addNotification({
+      type: 'info',
+      title: 'Sesión cerrada',
+      message: 'Has cerrado sesión correctamente',
+      section: 'Autenticación',
+      action: 'logout'
     });
-    window.dispatchEvent(event);
   };
 
-  const updateNovel = (novel: Novel) => {
-    const updatedNovel = {
-      ...novel,
-      updatedAt: new Date().toISOString(),
-    };
-    dispatch({ type: 'UPDATE_NOVEL', payload: updatedNovel });
-    addNotification(`Novela "${novel.titulo}" actualizada correctamente`, 'success');
-    
-    // Emit specific event for novel update
-    const event = new CustomEvent('admin_state_change', {
-      detail: { 
-        type: 'novel_update',
-        data: updatedNovel,
-        timestamp: new Date().toISOString()
-      }
+  const updatePrices = (prices: PriceConfig) => {
+    dispatch({ type: 'UPDATE_PRICES', payload: prices });
+    addNotification({
+      type: 'success',
+      title: 'Precios actualizados',
+      message: 'Los precios se han actualizado y sincronizado automáticamente',
+      section: 'Precios',
+      action: 'update'
     });
-    window.dispatchEvent(event);
+    broadcastChange({ type: 'prices', data: prices });
   };
 
-  const deleteNovel = (id: number) => {
-    const novel = state.novels.find(n => n.id === id);
-    dispatch({ type: 'DELETE_NOVEL', payload: id });
-    if (novel) {
-      addNotification(`Novela "${novel.titulo}" eliminada`, 'info');
-    }
-    
-    // Emit specific event for novel deletion
-    const event = new CustomEvent('admin_state_change', {
-      detail: { 
-        type: 'novel_delete',
-        data: { id },
-        timestamp: new Date().toISOString()
-      }
-    });
-    window.dispatchEvent(event);
-  };
-
-  const addDeliveryZone = (zoneData: Omit<DeliveryZone, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const zone: DeliveryZone = {
-      ...zoneData,
-      id: Date.now(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+  const addDeliveryZone = (zone: Omit<DeliveryZone, 'id' | 'createdAt' | 'updatedAt'>) => {
     dispatch({ type: 'ADD_DELIVERY_ZONE', payload: zone });
-    addNotification(`Zona de entrega "${zone.name}" agregada`, 'success');
-    
-    // Emit specific event for delivery zone addition
-    const event = new CustomEvent('admin_state_change', {
-      detail: { 
-        type: 'delivery_zone_add',
-        data: zone,
-        timestamp: new Date().toISOString()
-      }
+    addNotification({
+      type: 'success',
+      title: 'Zona de entrega agregada',
+      message: `Se agregó la zona "${zone.name}" y se sincronizó automáticamente`,
+      section: 'Zonas de Entrega',
+      action: 'create'
     });
-    window.dispatchEvent(event);
+    broadcastChange({ type: 'delivery_zone_add', data: zone });
   };
 
   const updateDeliveryZone = (zone: DeliveryZone) => {
-    const updatedZone = {
-      ...zone,
-      updatedAt: new Date().toISOString(),
-    };
-    dispatch({ type: 'UPDATE_DELIVERY_ZONE', payload: updatedZone });
-    addNotification(`Zona de entrega "${zone.name}" actualizada`, 'success');
-    
-    // Emit specific event for delivery zone update
-    const event = new CustomEvent('admin_state_change', {
-      detail: { 
-        type: 'delivery_zone_update',
-        data: updatedZone,
-        timestamp: new Date().toISOString()
-      }
+    dispatch({ type: 'UPDATE_DELIVERY_ZONE', payload: zone });
+    addNotification({
+      type: 'success',
+      title: 'Zona de entrega actualizada',
+      message: `Se actualizó la zona "${zone.name}" y se sincronizó automáticamente`,
+      section: 'Zonas de Entrega',
+      action: 'update'
     });
-    window.dispatchEvent(event);
+    broadcastChange({ type: 'delivery_zone_update', data: zone });
   };
 
   const deleteDeliveryZone = (id: number) => {
     const zone = state.deliveryZones.find(z => z.id === id);
     dispatch({ type: 'DELETE_DELIVERY_ZONE', payload: id });
-    if (zone) {
-      addNotification(`Zona de entrega "${zone.name}" eliminada`, 'info');
-    }
-    
-    // Emit specific event for delivery zone deletion
-    const event = new CustomEvent('admin_state_change', {
-      detail: { 
-        type: 'delivery_zone_delete',
-        data: { id },
-        timestamp: new Date().toISOString()
-      }
+    addNotification({
+      type: 'warning',
+      title: 'Zona de entrega eliminada',
+      message: `Se eliminó la zona "${zone?.name || 'Desconocida'}" y se sincronizó automáticamente`,
+      section: 'Zonas de Entrega',
+      action: 'delete'
     });
-    window.dispatchEvent(event);
+    broadcastChange({ type: 'delivery_zone_delete', data: { id } });
   };
 
-  const updatePrices = (prices: Prices) => {
-    dispatch({ type: 'UPDATE_PRICES', payload: prices });
-    addNotification('Precios actualizados correctamente', 'success');
-    
-    // Emit specific event for price update
-    const event = new CustomEvent('admin_state_change', {
-      detail: { 
-        type: 'prices',
-        data: prices,
-        timestamp: new Date().toISOString()
-      }
+  const addNovel = (novel: Omit<Novel, 'id' | 'createdAt' | 'updatedAt'>) => {
+    dispatch({ type: 'ADD_NOVEL', payload: novel });
+    addNotification({
+      type: 'success',
+      title: 'Novela agregada',
+      message: `Se agregó la novela "${novel.titulo}" y se sincronizó automáticamente`,
+      section: 'Gestión de Novelas',
+      action: 'create'
     });
-    window.dispatchEvent(event);
+    broadcastChange({ type: 'novel_add', data: novel });
   };
 
-  const addNotification = (message: string, type: Notification['type']) => {
-    if (!state.systemConfig.enableNotifications) return;
-    
-    const notification: Notification = {
-      id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      message,
-      type,
-      timestamp: new Date(),
-      read: false,
-    };
+  const updateNovel = (novel: Novel) => {
+    dispatch({ type: 'UPDATE_NOVEL', payload: novel });
+    addNotification({
+      type: 'success',
+      title: 'Novela actualizada',
+      message: `Se actualizó la novela "${novel.titulo}" y se sincronizó automáticamente`,
+      section: 'Gestión de Novelas',
+      action: 'update'
+    });
+    broadcastChange({ type: 'novel_update', data: novel });
+  };
+
+  const deleteNovel = (id: number) => {
+    const novel = state.novels.find(n => n.id === id);
+    dispatch({ type: 'DELETE_NOVEL', payload: id });
+    addNotification({
+      type: 'warning',
+      title: 'Novela eliminada',
+      message: `Se eliminó la novela "${novel?.titulo || 'Desconocida'}" y se sincronizó automáticamente`,
+      section: 'Gestión de Novelas',
+      action: 'delete'
+    });
+    broadcastChange({ type: 'novel_delete', data: { id } });
+  };
+
+  const addNotification = (notification: Omit<Notification, 'id' | 'timestamp'>) => {
     dispatch({ type: 'ADD_NOTIFICATION', payload: notification });
-  };
-
-  const markNotificationRead = (id: string) => {
-    dispatch({ type: 'MARK_NOTIFICATION_READ', payload: id });
   };
 
   const clearNotifications = () => {
     dispatch({ type: 'CLEAR_NOTIFICATIONS' });
+    addNotification({
+      type: 'info',
+      title: 'Notificaciones limpiadas',
+      message: 'Se han eliminado todas las notificaciones del sistema',
+      section: 'Notificaciones',
+      action: 'clear'
+    });
   };
 
-  const updateSystemConfig = (config: Partial<SystemConfig>) => {
-    dispatch({ type: 'UPDATE_SYSTEM_CONFIG', payload: config });
-    addNotification('Configuración del sistema actualizada', 'success');
-  };
-
-  const exportSystemConfig = (): string => {
-    const exportData = {
-      version: state.systemConfig.version,
-      exportDate: new Date().toISOString(),
-      prices: state.prices,
-      deliveryZones: state.deliveryZones,
-      novels: state.novels,
-      systemConfig: state.systemConfig,
-      notifications: state.notifications,
-      syncStatus: state.syncStatus
-    };
-    return JSON.stringify(exportData, null, 2);
-  };
-
-  const importSystemConfig = (configJson: string): boolean => {
+  const exportSystemConfig = async () => {
     try {
-      const config = JSON.parse(configJson);
-      
-      // Validate config structure
-      if (!config.prices || !config.deliveryZones || !config.novels) {
-        throw new Error('Configuración inválida');
-      }
-      
+      addNotification({
+        type: 'info',
+        title: 'Exportación de configuración iniciada',
+        message: 'Generando archivo de configuración JSON...',
+        section: 'Sistema',
+        action: 'export_config_start'
+      });
+
+      // Create comprehensive system configuration
+      const completeConfig: SystemConfig = {
+        ...state.systemConfig,
+        version: '2.1.0',
+        lastExport: new Date().toISOString(),
+        prices: state.prices,
+        deliveryZones: state.deliveryZones,
+        novels: state.novels,
+        metadata: {
+          ...state.systemConfig.metadata,
+          totalOrders: state.systemConfig.metadata.totalOrders,
+          totalRevenue: state.systemConfig.metadata.totalRevenue,
+          lastOrderDate: state.systemConfig.metadata.lastOrderDate,
+          systemUptime: state.systemConfig.metadata.systemUptime,
+        },
+      };
+
+      // Generate JSON file
+      const configJson = JSON.stringify(completeConfig, null, 2);
+      const blob = new Blob([configJson], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `TV_a_la_Carta_Config_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      // Update system config with export timestamp
       dispatch({ 
-        type: 'LOAD_STATE', 
-        payload: {
-          prices: config.prices,
-          deliveryZones: config.deliveryZones,
-          novels: config.novels,
-          systemConfig: config.systemConfig || state.systemConfig,
-          notifications: config.notifications || [],
-          syncStatus: config.syncStatus || state.syncStatus
-        }
+        type: 'UPDATE_SYSTEM_CONFIG', 
+        payload: { lastExport: new Date().toISOString() } 
       });
-      
-      addNotification('Configuración importada correctamente', 'success');
-      
-      // Emit full sync event
-      const event = new CustomEvent('admin_full_sync', {
-        detail: { 
-          config: config,
-          timestamp: new Date().toISOString()
-        }
+
+      addNotification({
+        type: 'success',
+        title: 'Configuración exportada',
+        message: 'La configuración JSON se ha exportado correctamente',
+        section: 'Sistema',
+        action: 'export_config'
       });
-      window.dispatchEvent(event);
-      
-      return true;
     } catch (error) {
-      addNotification('Error al importar configuración', 'error');
-      return false;
+      console.error('Error exporting system config:', error);
+      addNotification({
+        type: 'error',
+        title: 'Error en la exportación de configuración',
+        message: 'No se pudo exportar la configuración JSON',
+        section: 'Sistema',
+        action: 'export_config_error'
+      });
     }
   };
 
-  const getAvailableCountries = (): string[] => {
-    return availableCountries;
+  const exportCompleteSourceCode = async () => {
+    try {
+      addNotification({
+        type: 'info',
+        title: 'Exportación de código fuente iniciada',
+        message: 'Generando sistema completo con código fuente...',
+        section: 'Sistema',
+        action: 'export_source_start'
+      });
+
+      // Importar dinámicamente el generador de código fuente
+      try {
+        const { generateCompleteSourceCode } = await import('../utils/sourceCodeGenerator');
+        await generateCompleteSourceCode(state.systemConfig);
+      } catch (importError) {
+        console.error('Error importing source code generator:', importError);
+        throw new Error('No se pudo cargar el generador de código fuente');
+      }
+
+      addNotification({
+        type: 'success',
+        title: 'Código fuente exportado',
+        message: 'El sistema completo se ha exportado como código fuente',
+        section: 'Sistema',
+        action: 'export_source'
+      });
+    } catch (error) {
+      console.error('Error exporting source code:', error);
+      addNotification({
+        type: 'error',
+        title: 'Error en la exportación de código',
+        message: error instanceof Error ? error.message : 'No se pudo exportar el código fuente completo',
+        section: 'Sistema',
+        action: 'export_source_error'
+      });
+      throw error;
+    }
+  };
+
+  const importSystemConfig = (config: SystemConfig) => {
+    try {
+      dispatch({ type: 'LOAD_SYSTEM_CONFIG', payload: config });
+      addNotification({
+        type: 'success',
+        title: 'Configuración importada',
+        message: 'La configuración del sistema se ha cargado correctamente',
+        section: 'Sistema',
+        action: 'import'
+      });
+    } catch (error) {
+      console.error('Error importing system config:', error);
+      addNotification({
+        type: 'error',
+        title: 'Error en la importación',
+        message: 'No se pudo cargar la configuración del sistema',
+        section: 'Sistema',
+        action: 'import_error'
+      });
+    }
+  };
+
+  const syncAllSections = async (): Promise<void> => {
+    try {
+      addNotification({
+        type: 'info',
+        title: 'Sincronización completa iniciada',
+        message: 'Sincronizando todas las secciones del sistema...',
+        section: 'Sistema',
+        action: 'sync_all_start'
+      });
+
+      // Simulate comprehensive sync of all sections
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      // Update all components with current state
+      const updatedConfig: SystemConfig = {
+        ...state.systemConfig,
+        lastExport: new Date().toISOString(),
+        prices: state.prices,
+        deliveryZones: state.deliveryZones,
+        novels: state.novels,
+      };
+
+      dispatch({ type: 'UPDATE_SYSTEM_CONFIG', payload: updatedConfig });
+      
+      // Broadcast changes to all components
+      window.dispatchEvent(new CustomEvent('admin_full_sync', { 
+        detail: { 
+          config: updatedConfig,
+          timestamp: new Date().toISOString()
+        } 
+      }));
+
+      addNotification({
+        type: 'success',
+        title: 'Sincronización completa exitosa',
+        message: 'Todas las secciones se han sincronizado correctamente',
+        section: 'Sistema',
+        action: 'sync_all'
+      });
+    } catch (error) {
+      console.error('Error in full sync:', error);
+      addNotification({
+        type: 'error',
+        title: 'Error en sincronización completa',
+        message: 'No se pudo completar la sincronización de todas las secciones',
+        section: 'Sistema',
+        action: 'sync_all_error'
+      });
+    }
+  };
+
+  const broadcastChange = (change: any) => {
+    const changeEvent = {
+      ...change,
+      timestamp: new Date().toISOString(),
+      source: 'admin_panel'
+    };
+    
+    dispatch({ 
+      type: 'UPDATE_SYNC_STATUS', 
+      payload: { 
+        lastSync: new Date().toISOString(),
+        pendingChanges: Math.max(0, state.syncStatus.pendingChanges - 1)
+      } 
+    });
+
+    window.dispatchEvent(new CustomEvent('admin_state_change', { 
+      detail: changeEvent 
+    }));
+  };
+
+  const syncWithRemote = async (): Promise<void> => {
+    try {
+      dispatch({ type: 'UPDATE_SYNC_STATUS', payload: { isOnline: true } });
+      
+      addNotification({
+        type: 'info',
+        title: 'Sincronización iniciada',
+        message: 'Iniciando sincronización con el sistema remoto...',
+        section: 'Sistema',
+        action: 'sync_start'
+      });
+
+      // Simulate remote sync
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      dispatch({ 
+        type: 'UPDATE_SYNC_STATUS', 
+        payload: { 
+          lastSync: new Date().toISOString(),
+          pendingChanges: 0
+        } 
+      });
+      
+      addNotification({
+        type: 'success',
+        title: 'Sincronización completada',
+        message: 'Todos los datos se han sincronizado correctamente',
+        section: 'Sistema',
+        action: 'sync'
+      });
+    } catch (error) {
+      dispatch({ type: 'UPDATE_SYNC_STATUS', payload: { isOnline: false } });
+      addNotification({
+        type: 'error',
+        title: 'Error de sincronización',
+        message: 'No se pudo sincronizar con el servidor remoto',
+        section: 'Sistema',
+        action: 'sync_error'
+      });
+    }
   };
 
   return (
-    <AdminContext.Provider value={{
-      state,
-      login,
-      logout,
-      addNovel,
-      updateNovel,
-      deleteNovel,
-      addDeliveryZone,
-      updateDeliveryZone,
-      deleteDeliveryZone,
-      updatePrices,
-      addNotification,
-      markNotificationRead,
-      clearNotifications,
-      updateSystemConfig,
-      exportSystemConfig,
-      importSystemConfig,
-      getAvailableCountries
-    }}>
+    <AdminContext.Provider
+      value={{
+        state,
+        login,
+        logout,
+        updatePrices,
+        addDeliveryZone,
+        updateDeliveryZone,
+        deleteDeliveryZone,
+        addNovel,
+        updateNovel,
+        deleteNovel,
+        addNotification,
+        clearNotifications,
+        exportSystemConfig,
+        importSystemConfig,
+        exportCompleteSourceCode,
+        syncWithRemote,
+        broadcastChange,
+        syncAllSections,
+      }}
+    >
       {children}
     </AdminContext.Provider>
   );
