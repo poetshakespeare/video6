@@ -11,7 +11,6 @@ import { ErrorMessage } from '../components/ErrorMessage';
 import { NovelasModal } from '../components/NovelasModal';
 import { ScrollableSection } from '../components/ScrollableSection';
 import { QuickNavMenu } from '../components/QuickNavMenu';
-import { ContentArrows } from '../components/ContentArrows';
 import type { Movie, TVShow } from '../types/movie';
 
 type TrendingTimeWindow = 'day' | 'week';
@@ -667,9 +666,6 @@ export function Home() {
 
       {/* Quick Navigation Menu */}
       <QuickNavMenu />
-
-      {/* Content Navigation Arrows */}
-      <ContentArrows />
     </div>
   );
 }

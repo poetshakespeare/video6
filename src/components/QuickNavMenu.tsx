@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Menu, X, Home, Clapperboard, Monitor, Sparkles, Library, Radio, CheckCircle2, Flame } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Menu, X, Home, Clapperboard, Monitor, Sparkles, Library, Radio, CheckCircle2, Flame, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface Section {
   id: string;
@@ -9,6 +9,8 @@ interface Section {
 
 export function QuickNavMenu() {
   const [isOpen, setIsOpen] = useState(false);
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const [showArrows, setShowArrows] = useState(false);
 
   const sections: Section[] = [
     { id: 'hero', name: 'Inicio', icon: <Home className="h-4 w-4" /> },
@@ -19,6 +21,25 @@ export function QuickNavMenu() {
     { id: 'tv-shows', name: 'Series', icon: <Monitor className="h-4 w-4" /> },
     { id: 'anime', name: 'Anime', icon: <Sparkles className="h-4 w-4" /> },
   ];
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + 200;
+      setShowArrows(window.scrollY > 300);
+
+      let currentIndex = 0;
+      sections.forEach((section, index) => {
+        const element = document.getElementById(section.id);
+        if (element && scrollPosition >= element.offsetTop) {
+          currentIndex = index;
+        }
+      });
+      setCurrentSectionIndex(currentIndex);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -40,15 +61,23 @@ export function QuickNavMenu() {
     setIsOpen(false);
   };
 
+  const navigateToSection = (direction: 'up' | 'down') => {
+    const newIndex = direction === 'up'
+      ? Math.max(0, currentSectionIndex - 1)
+      : Math.min(sections.length - 1, currentSectionIndex + 1);
+
+    scrollToSection(sections[newIndex].id);
+  };
+
   return (
     <>
-      {/* Toggle Button */}
+      {/* Toggle Button - Responsive positioning */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed left-4 top-24 z-50 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110"
+        className="fixed left-4 top-24 z-50 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 md:p-4"
         aria-label="Toggle navigation menu"
       >
-        {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        {isOpen ? <X className="h-5 w-5 md:h-6 md:w-6" /> : <Menu className="h-5 w-5 md:h-6 md:w-6" />}
       </button>
 
       {/* Navigation Menu */}
@@ -60,44 +89,89 @@ export function QuickNavMenu() {
             onClick={() => setIsOpen(false)}
           />
 
-          {/* Menu Panel */}
-          <div className="fixed left-4 top-40 z-50 bg-white rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-left duration-300 max-w-xs w-72">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4">
-              <h3 className="text-white font-bold text-lg flex items-center">
-                <Library className="h-5 w-5 mr-2" />
+          {/* Menu Panel - Responsive */}
+          <div className="fixed left-4 top-40 z-50 bg-white rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-left duration-300 w-[calc(100vw-2rem)] max-w-xs sm:w-80 md:max-w-sm">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 md:p-5">
+              <h3 className="text-white font-bold text-base md:text-lg flex items-center">
+                <Library className="h-5 w-5 md:h-6 md:w-6 mr-2" />
                 Navegación Rápida
               </h3>
-              <p className="text-white/80 text-xs mt-1">Salta a cualquier sección</p>
+              <p className="text-white/80 text-xs md:text-sm mt-1">Salta a cualquier sección</p>
             </div>
 
-            <div className="max-h-96 overflow-y-auto">
-              {sections.map((section) => (
+            <div className="max-h-[60vh] md:max-h-96 overflow-y-auto">
+              {sections.map((section, index) => (
                 <button
                   key={section.id}
                   onClick={() => scrollToSection(section.id)}
-                  className="w-full px-4 py-3 flex items-center space-x-3 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-colors border-b border-gray-100 last:border-b-0 text-left group"
+                  className={`w-full px-4 md:px-5 py-3 md:py-4 flex items-center space-x-3 md:space-x-4 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-colors border-b border-gray-100 last:border-b-0 text-left group ${
+                    currentSectionIndex === index ? 'bg-blue-50' : ''
+                  }`}
                 >
-                  <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-2 rounded-lg text-white group-hover:scale-110 transition-transform">
+                  <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-2 md:p-2.5 rounded-lg text-white group-hover:scale-110 transition-transform flex-shrink-0">
                     {section.icon}
                   </div>
-                  <span className="font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
-                    {section.name}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-sm md:text-base text-gray-700 group-hover:text-blue-600 transition-colors block truncate">
+                      {section.name}
+                    </span>
+                    {currentSectionIndex === index && (
+                      <span className="text-xs text-blue-500 font-medium">Actual</span>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>
 
-            <div className="p-3 bg-gray-50 border-t border-gray-200">
+            <div className="p-3 md:p-4 bg-gray-50 border-t border-gray-200">
               <button
                 onClick={scrollToTop}
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white py-2 px-4 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 flex items-center justify-center"
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white py-2.5 md:py-3 px-4 rounded-lg font-medium text-sm md:text-base transition-all duration-300 transform hover:scale-105 flex items-center justify-center"
               >
-                <Home className="h-4 w-4 mr-2" />
+                <Home className="h-4 w-4 md:h-5 md:w-5 mr-2" />
                 Ir al Inicio
               </button>
             </div>
           </div>
         </>
+      )}
+
+      {/* Navigation Arrows - Only show on larger screens */}
+      {showArrows && (
+        <div className="fixed right-4 bottom-20 z-40 hidden sm:flex flex-col space-y-2 md:space-y-3">
+          {/* Up Arrow */}
+          <button
+            onClick={() => navigateToSection('up')}
+            disabled={currentSectionIndex === 0}
+            className={`p-2.5 md:p-3 rounded-full shadow-lg transition-all duration-300 ${
+              currentSectionIndex === 0
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'
+                : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-xl hover:scale-110'
+            }`}
+            aria-label="Sección anterior"
+          >
+            <ChevronUp className="h-5 w-5 md:h-6 md:w-6" />
+          </button>
+
+          {/* Section indicator */}
+          <div className="bg-white rounded-full px-2.5 md:px-3 py-1.5 md:py-2 shadow-lg text-xs md:text-sm font-bold text-gray-700 text-center">
+            {currentSectionIndex + 1}/{sections.length}
+          </div>
+
+          {/* Down Arrow */}
+          <button
+            onClick={() => navigateToSection('down')}
+            disabled={currentSectionIndex === sections.length - 1}
+            className={`p-2.5 md:p-3 rounded-full shadow-lg transition-all duration-300 ${
+              currentSectionIndex === sections.length - 1
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'
+                : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-xl hover:scale-110'
+            }`}
+            aria-label="Siguiente sección"
+          >
+            <ChevronDown className="h-5 w-5 md:h-6 md:w-6" />
+          </button>
+        </div>
       )}
     </>
   );
