@@ -40,10 +40,9 @@ export function SearchPage() {
       
       // Search novels first
       const novelMatches = adminState.novels?.filter(novel =>
-        novel.titulo.toLowerCase().trim().includes(searchQuery.toLowerCase().trim()) ||
+        novel.titulo.toLowerCase().includes(searchQuery.toLowerCase()) ||
         novel.genero.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (novel.pais && novel.pais.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (novel.descripcion && novel.descripcion.toLowerCase().includes(searchQuery.toLowerCase()))
+        (novel.pais && novel.pais.toLowerCase().includes(searchQuery.toLowerCase()))
       ) || [];
       
       setNovelResults(novelMatches);
