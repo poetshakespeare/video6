@@ -9,6 +9,8 @@ import { HeroCarousel } from '../components/HeroCarousel';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { NovelasModal } from '../components/NovelasModal';
+import { NetflixSection } from '../components/NetflixSection';
+import { FloatingNav } from '../components/FloatingNav';
 import type { Movie, TVShow } from '../types/movie';
 
 type TrendingTimeWindow = 'day' | 'week';
@@ -242,7 +244,7 @@ export function Home() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Trending Content */}
-        <section className="mb-12">
+        <section id="section-trending" className="mb-12">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 space-y-4 sm:space-y-0">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center">
               <Flame className="mr-2 h-6 w-6 text-red-500" />
@@ -283,37 +285,29 @@ export function Home() {
         </section>
 
         {/* Sección Dedicada: Novelas en Transmisión - Estilo Netflix */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
-              <div className="bg-gradient-to-r from-red-500 to-pink-500 p-2 rounded-xl mr-3 shadow-lg">
-                <Radio className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-              </div>
-              Novelas en Transmisión
-            </h2>
-            <button
-              onClick={() => setShowNovelasModal(true)}
-              className="text-pink-600 hover:text-pink-800 flex items-center font-medium text-sm sm:text-base"
-            >
-              Ver todas
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </button>
-          </div>
+        <section id="section-novelas-transmision" className="mb-12">
 
           {adminState.novels && adminState.novels.length > 0 ? (
             <>
               {adminState.novels.filter(novel => novel.estado === 'transmision').length > 0 ? (
-                <>
-                  <div className="relative overflow-x-auto scrollbar-hide -mx-4 sm:mx-0">
-                    <div className="flex gap-3 sm:gap-4 px-4 sm:px-0 pb-4" style={{ minWidth: 'min-content' }}>
-                    {adminState.novels
-                      .filter(novel => novel.estado === 'transmision')
-                      .map((novel) => (
-                        <Link
-                          to={`/novel/${novel.id}`}
-                          key={`novel-live-${novel.id}`}
-                          className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105 border border-gray-200 hover:border-red-300 flex-shrink-0 w-40 sm:w-44 md:w-48 lg:w-52"
-                        >
+                <NetflixSection
+                  title="Novelas en Transmisión"
+                  icon={
+                    <div className="bg-gradient-to-r from-red-500 to-pink-500 p-2 rounded-xl shadow-lg">
+                      <Radio className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                    </div>
+                  }
+                  showViewAll={true}
+                  onViewAllClick={() => setShowNovelasModal(true)}
+                >
+                  {adminState.novels
+                    .filter(novel => novel.estado === 'transmision')
+                    .map((novel) => (
+                      <Link
+                        to={`/novel/${novel.id}`}
+                        key={`novel-live-${novel.id}`}
+                        className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105 border border-gray-200 hover:border-red-300 flex-shrink-0 w-40 sm:w-44 md:w-48 lg:w-52"
+                      >
                           <div className="relative">
                             <img
                               src={novel.imagen || (() => {
@@ -370,22 +364,9 @@ export function Home() {
                               </div>
                             </div>
                           </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                  {adminState.novels.filter(novel => novel.estado === 'transmision').length > 5 && (
-                  <div className="text-center mt-6">
-                    <button
-                      onClick={() => setShowNovelasModal(true)}
-                      className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 flex items-center mx-auto text-sm sm:text-base"
-                    >
-                      <Library className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                      Ver Todas ({adminState.novels.filter(novel => novel.estado === 'transmision').length})
-                    </button>
-                  </div>
-                  )}
-                </>
+                      </Link>
+                    ))}
+                </NetflixSection>
               ) : (
                 <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
                   <div className="bg-red-100 p-4 rounded-full w-fit mx-auto mb-4">
@@ -422,37 +403,29 @@ export function Home() {
         </section>
 
         {/* Sección Dedicada: Novelas Finalizadas - Estilo Netflix */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
-              <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-2 rounded-xl mr-3 shadow-lg">
-                <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-              </div>
-              Novelas Finalizadas
-            </h2>
-            <button
-              onClick={() => setShowNovelasModal(true)}
-              className="text-green-600 hover:text-green-800 flex items-center font-medium text-sm sm:text-base"
-            >
-              Ver todas
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </button>
-          </div>
+        <section id="section-novelas-finalizadas" className="mb-12">
 
           {adminState.novels && adminState.novels.length > 0 ? (
             <>
               {adminState.novels.filter(novel => novel.estado === 'finalizada').length > 0 ? (
-                <>
-                  <div className="relative overflow-x-auto scrollbar-hide -mx-4 sm:mx-0">
-                    <div className="flex gap-3 sm:gap-4 px-4 sm:px-0 pb-4" style={{ minWidth: 'min-content' }}>
-                    {adminState.novels
-                      .filter(novel => novel.estado === 'finalizada')
-                      .map((novel) => (
-                        <Link
-                          to={`/novel/${novel.id}`}
-                          key={`novel-finished-${novel.id}`}
-                          className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105 border border-gray-200 hover:border-green-300 flex-shrink-0 w-40 sm:w-44 md:w-48 lg:w-52"
-                        >
+                <NetflixSection
+                  title="Novelas Finalizadas"
+                  icon={
+                    <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-2 rounded-xl shadow-lg">
+                      <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                    </div>
+                  }
+                  showViewAll={true}
+                  onViewAllClick={() => setShowNovelasModal(true)}
+                >
+                  {adminState.novels
+                    .filter(novel => novel.estado === 'finalizada')
+                    .map((novel) => (
+                      <Link
+                        to={`/novel/${novel.id}`}
+                        key={`novel-finished-${novel.id}`}
+                        className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105 border border-gray-200 hover:border-green-300 flex-shrink-0 w-40 sm:w-44 md:w-48 lg:w-52"
+                      >
                           <div className="relative">
                             <img
                               src={novel.imagen || (() => {
@@ -509,22 +482,9 @@ export function Home() {
                               </div>
                             </div>
                           </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                  {adminState.novels.filter(novel => novel.estado === 'finalizada').length > 5 && (
-                  <div className="text-center mt-6">
-                    <button
-                      onClick={() => setShowNovelasModal(true)}
-                      className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 flex items-center mx-auto text-sm sm:text-base"
-                    >
-                      <Library className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                      Ver Todas ({adminState.novels.filter(novel => novel.estado === 'finalizada').length})
-                    </button>
-                  </div>
-                  )}
-                </>
+                      </Link>
+                    ))}
+                </NetflixSection>
               ) : (
                 <div className="bg-green-50 border border-green-200 rounded-xl p-8 text-center">
                   <div className="bg-green-100 p-4 rounded-full w-fit mx-auto mb-4">
@@ -561,69 +521,51 @@ export function Home() {
         </section>
 
         {/* Popular Movies */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Clapperboard className="mr-2 h-6 w-6 text-blue-500" />
-              Películas Destacadas
-            </h2>
-            <Link
-              to="/movies"
-              className="text-blue-600 hover:text-blue-800 flex items-center font-medium"
-            >
-              Ver todas
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <section id="section-peliculas" className="mb-12">
+          <NetflixSection
+            title="Películas Destacadas"
+            icon={<Clapperboard className="h-6 w-6 text-blue-500" />}
+            showViewAll={true}
+            onViewAllClick={() => window.location.href = '/movies'}
+          >
             {popularMovies.map((movie) => (
-              <MovieCard key={movie.id} item={movie} type="movie" />
+              <div key={movie.id} className="flex-shrink-0 w-64">
+                <MovieCard item={movie} type="movie" />
+              </div>
             ))}
-          </div>
+          </NetflixSection>
         </section>
 
         {/* Popular TV Shows */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Monitor className="mr-2 h-6 w-6 text-purple-500" />
-              Series Destacadas
-            </h2>
-            <Link
-              to="/tv"
-              className="text-blue-600 hover:text-blue-800 flex items-center font-medium"
-            >
-              Ver todas
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <section id="section-series" className="mb-12">
+          <NetflixSection
+            title="Series Destacadas"
+            icon={<Monitor className="h-6 w-6 text-purple-500" />}
+            showViewAll={true}
+            onViewAllClick={() => window.location.href = '/tv'}
+          >
             {popularTVShows.map((show) => (
-              <MovieCard key={show.id} item={show} type="tv" />
+              <div key={show.id} className="flex-shrink-0 w-64">
+                <MovieCard item={show} type="tv" />
+              </div>
             ))}
-          </div>
+          </NetflixSection>
         </section>
 
         {/* Popular Anime */}
-        <section className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Sparkles className="mr-2 h-6 w-6 text-pink-500" />
-              Anime Destacado
-            </h2>
-            <Link
-              to="/anime"
-              className="text-blue-600 hover:text-blue-800 flex items-center font-medium"
-            >
-              Ver todos
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <section id="section-anime" className="mb-12">
+          <NetflixSection
+            title="Anime Destacado"
+            icon={<Sparkles className="h-6 w-6 text-pink-500" />}
+            showViewAll={true}
+            onViewAllClick={() => window.location.href = '/anime'}
+          >
             {popularAnime.map((anime) => (
-              <MovieCard key={anime.id} item={anime} type="tv" />
+              <div key={anime.id} className="flex-shrink-0 w-64">
+                <MovieCard item={anime} type="tv" />
+              </div>
             ))}
-          </div>
+          </NetflixSection>
         </section>
 
         {/* Last Update Info (Hidden from users) */}
@@ -633,9 +575,21 @@ export function Home() {
       </div>
       
       {/* Modal de Novelas */}
-      <NovelasModal 
-        isOpen={showNovelasModal} 
-        onClose={() => setShowNovelasModal(false)} 
+      <NovelasModal
+        isOpen={showNovelasModal}
+        onClose={() => setShowNovelasModal(false)}
+      />
+
+      {/* Floating Navigation */}
+      <FloatingNav
+        sections={[
+          { id: 'section-trending', label: 'En Tendencia', icon: <Flame className="h-5 w-5" /> },
+          { id: 'section-novelas-transmision', label: 'Novelas en Transmisión', icon: <Radio className="h-5 w-5" /> },
+          { id: 'section-novelas-finalizadas', label: 'Novelas Finalizadas', icon: <CheckCircle2 className="h-5 w-5" /> },
+          { id: 'section-peliculas', label: 'Películas Destacadas', icon: <Clapperboard className="h-5 w-5" /> },
+          { id: 'section-series', label: 'Series Destacadas', icon: <Monitor className="h-5 w-5" /> },
+          { id: 'section-anime', label: 'Anime Destacado', icon: <Sparkles className="h-5 w-5" /> },
+        ]}
       />
     </div>
   );
