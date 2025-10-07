@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, TrendingUp, Star, Monitor, Filter, Calendar, Clock, Flame, Library, Play, Clapperboard, Radio, CheckCircle2, Zap } from 'lucide-react';
+import { ChevronRight, TrendingUp, Star, Monitor, Filter, Calendar, Clock, Flame, Library, Play, Clapperboard, Sparkles, Radio, CheckCircle2 } from 'lucide-react';
 import { tmdbService } from '../services/tmdb';
 import { useCart } from '../context/CartContext';
 import { useAdmin } from '../context/AdminContext';
@@ -9,8 +9,6 @@ import { HeroCarousel } from '../components/HeroCarousel';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { NovelasModal } from '../components/NovelasModal';
-import { ScrollableSection } from '../components/ScrollableSection';
-import { QuickNavMenu } from '../components/QuickNavMenu';
 import type { Movie, TVShow } from '../types/movie';
 
 type TrendingTimeWindow = 'day' | 'week';
@@ -202,9 +200,7 @@ export function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Carousel */}
-      <div id="hero">
-        <HeroCarousel items={heroItems} />
-      </div>
+      <HeroCarousel items={heroItems} />
       
       {/* Call to Action Section */}
       <section className="bg-gradient-to-r from-blue-900 via-purple-900 to-pink-800 text-white py-16">
@@ -246,7 +242,7 @@ export function Home() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Trending Content */}
-        <section id="trending" className="mb-12">
+        <section className="mb-12">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 space-y-4 sm:space-y-0">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center">
               <Flame className="mr-2 h-6 w-6 text-red-500" />
@@ -275,50 +271,48 @@ export function Home() {
           </div>
           
           {/* Movies and TV Shows */}
-          <ScrollableSection>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
             {trendingContent.map((item) => {
               const itemType = 'title' in item ? 'movie' : 'tv';
               return (
-                <div key={`trending-${itemType}-${item.id}`} className="flex-shrink-0 w-72">
-                  <MovieCard item={item} type={itemType} />
-                </div>
+                <MovieCard key={`trending-${itemType}-${item.id}`} item={item} type={itemType} />
               );
             })}
-          </ScrollableSection>
+          </div>
           
         </section>
 
-        {/* Sección Dedicada: Novelas en Transmisión */}
-        <section id="novelas-live" className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+        {/* Sección Dedicada: Novelas en Transmisión - Estilo Netflix */}
+        <section className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
               <div className="bg-gradient-to-r from-red-500 to-pink-500 p-2 rounded-xl mr-3 shadow-lg">
-                <Radio className="h-5 w-5 text-white" />
+                <Radio className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
               Novelas en Transmisión
             </h2>
             <button
               onClick={() => setShowNovelasModal(true)}
-              className="text-pink-600 hover:text-pink-800 flex items-center font-medium"
+              className="text-pink-600 hover:text-pink-800 flex items-center font-medium text-sm sm:text-base"
             >
-              Ver catálogo completo
+              Ver todas
               <ChevronRight className="ml-1 h-4 w-4" />
             </button>
           </div>
-          
+
           {adminState.novels && adminState.novels.length > 0 ? (
             <>
               {adminState.novels.filter(novel => novel.estado === 'transmision').length > 0 ? (
                 <>
-                  <ScrollableSection>
+                  <div className="relative overflow-x-auto scrollbar-hide -mx-4 sm:mx-0">
+                    <div className="flex gap-3 sm:gap-4 px-4 sm:px-0 pb-4" style={{ minWidth: 'min-content' }}>
                     {adminState.novels
                       .filter(novel => novel.estado === 'transmision')
-                      .slice(0, 10)
                       .map((novel) => (
-                        <div key={`novel-live-wrapper-${novel.id}`} className="flex-shrink-0 w-64">
                         <Link
                           to={`/novel/${novel.id}`}
-                          className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105 border border-gray-200 hover:border-red-300 block"
+                          key={`novel-live-${novel.id}`}
+                          className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105 border border-gray-200 hover:border-red-300 flex-shrink-0 w-40 sm:w-44 md:w-48 lg:w-52"
                         >
                           <div className="relative">
                             <img
@@ -333,7 +327,7 @@ export function Home() {
                                 return genreImages[novel.genero as keyof typeof genreImages] || 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=400&fit=crop';
                               })()}
                               alt={novel.titulo}
-                              className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                              className="w-full h-56 sm:h-60 md:h-64 lg:h-72 object-cover group-hover:scale-105 transition-transform duration-300"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.src = 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=400&fit=crop';
@@ -363,41 +357,34 @@ export function Home() {
                               </div>
                             </div>
                           </div>
-                          <div className="p-4">
-                            <h4 className="font-bold text-gray-900 text-sm line-clamp-2 mb-2 group-hover:text-red-600 transition-colors">
+                          <div className="p-3">
+                            <h4 className="font-bold text-gray-900 text-xs sm:text-sm line-clamp-2 mb-2 group-hover:text-red-600 transition-colors leading-tight">
                               {novel.titulo}
                             </h4>
-                            <div className="flex flex-col space-y-2 text-xs text-gray-600 mb-3">
-                              <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-center font-medium">{novel.genero}</span>
-                              <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-center font-medium">
-                                {getCountryFlag(novel.pais || 'No especificado')} {novel.pais || 'No especificado'}
-                              </span>
-                            </div>
                             <div className="text-center bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-2 border border-red-200">
-                              <span className="text-sm font-bold text-red-600">
-                                ${(novel.capitulos * currentPrices.novelPricePerChapter).toLocaleString()} CUP
+                              <span className="text-xs sm:text-sm font-bold text-red-600">
+                                ${(novel.capitulos * currentPrices.novelPricePerChapter).toLocaleString()}
                               </span>
-                              <div className="text-xs text-gray-500 mt-1">
-                                ${currentPrices.novelPricePerChapter} CUP × {novel.capitulos} cap.
+                              <div className="text-xs text-gray-500">
+                                {novel.capitulos} cap.
                               </div>
                             </div>
                           </div>
                         </Link>
-                        </div>
                       ))}
-                  </ScrollableSection>
-                  <div className="text-center mt-8">
+                    </div>
+                  </div>
+                  {adminState.novels.filter(novel => novel.estado === 'transmision').length > 5 && (
+                  <div className="text-center mt-6">
                     <button
                       onClick={() => setShowNovelasModal(true)}
-                      className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 flex items-center mx-auto"
+                      className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 flex items-center mx-auto text-sm sm:text-base"
                     >
-                      <Library className="mr-2 h-5 w-5" />
-                      Ver Todas las Novelas en Transmisión
+                      <Library className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                      Ver Todas ({adminState.novels.filter(novel => novel.estado === 'transmision').length})
                     </button>
-                    <p className="text-sm text-gray-600 mt-3 max-w-md mx-auto">
-                      {adminState.novels.filter(novel => novel.estado === 'transmision').length} novelas actualmente en transmisión
-                    </p>
                   </div>
+                  )}
                 </>
               ) : (
                 <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
@@ -434,37 +421,37 @@ export function Home() {
           )}
         </section>
 
-        {/* Sección Dedicada: Novelas Finalizadas */}
-        <section id="novelas-finished" className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+        {/* Sección Dedicada: Novelas Finalizadas - Estilo Netflix */}
+        <section className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
               <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-2 rounded-xl mr-3 shadow-lg">
-                <CheckCircle2 className="h-5 w-5 text-white" />
+                <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
               Novelas Finalizadas
             </h2>
             <button
               onClick={() => setShowNovelasModal(true)}
-              className="text-green-600 hover:text-green-800 flex items-center font-medium"
+              className="text-green-600 hover:text-green-800 flex items-center font-medium text-sm sm:text-base"
             >
-              Ver catálogo completo
+              Ver todas
               <ChevronRight className="ml-1 h-4 w-4" />
             </button>
           </div>
-          
+
           {adminState.novels && adminState.novels.length > 0 ? (
             <>
               {adminState.novels.filter(novel => novel.estado === 'finalizada').length > 0 ? (
                 <>
-                  <ScrollableSection>
+                  <div className="relative overflow-x-auto scrollbar-hide -mx-4 sm:mx-0">
+                    <div className="flex gap-3 sm:gap-4 px-4 sm:px-0 pb-4" style={{ minWidth: 'min-content' }}>
                     {adminState.novels
                       .filter(novel => novel.estado === 'finalizada')
-                      .slice(0, 10)
                       .map((novel) => (
-                        <div key={`novel-finished-wrapper-${novel.id}`} className="flex-shrink-0 w-64">
                         <Link
                           to={`/novel/${novel.id}`}
-                          className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105 border border-gray-200 hover:border-green-300 block"
+                          key={`novel-finished-${novel.id}`}
+                          className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105 border border-gray-200 hover:border-green-300 flex-shrink-0 w-40 sm:w-44 md:w-48 lg:w-52"
                         >
                           <div className="relative">
                             <img
@@ -479,7 +466,7 @@ export function Home() {
                                 return genreImages[novel.genero as keyof typeof genreImages] || 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=400&fit=crop';
                               })()}
                               alt={novel.titulo}
-                              className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                              className="w-full h-56 sm:h-60 md:h-64 lg:h-72 object-cover group-hover:scale-105 transition-transform duration-300"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
                                 target.src = 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=400&fit=crop';
@@ -509,41 +496,34 @@ export function Home() {
                               </div>
                             </div>
                           </div>
-                          <div className="p-4">
-                            <h4 className="font-bold text-gray-900 text-sm line-clamp-2 mb-2 group-hover:text-green-600 transition-colors">
+                          <div className="p-3">
+                            <h4 className="font-bold text-gray-900 text-xs sm:text-sm line-clamp-2 mb-2 group-hover:text-green-600 transition-colors leading-tight">
                               {novel.titulo}
                             </h4>
-                            <div className="flex flex-col space-y-2 text-xs text-gray-600 mb-3">
-                              <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-center font-medium">{novel.genero}</span>
-                              <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-center font-medium">
-                                {getCountryFlag(novel.pais || 'No especificado')} {novel.pais || 'No especificado'}
-                              </span>
-                            </div>
                             <div className="text-center bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-2 border border-green-200">
-                              <span className="text-sm font-bold text-green-600">
-                                ${(novel.capitulos * currentPrices.novelPricePerChapter).toLocaleString()} CUP
+                              <span className="text-xs sm:text-sm font-bold text-green-600">
+                                ${(novel.capitulos * currentPrices.novelPricePerChapter).toLocaleString()}
                               </span>
-                              <div className="text-xs text-gray-500 mt-1">
-                                ${currentPrices.novelPricePerChapter} CUP × {novel.capitulos} cap.
+                              <div className="text-xs text-gray-500">
+                                {novel.capitulos} cap.
                               </div>
                             </div>
                           </div>
                         </Link>
-                        </div>
                       ))}
-                  </ScrollableSection>
-                  <div className="text-center mt-8">
+                    </div>
+                  </div>
+                  {adminState.novels.filter(novel => novel.estado === 'finalizada').length > 5 && (
+                  <div className="text-center mt-6">
                     <button
                       onClick={() => setShowNovelasModal(true)}
-                      className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 flex items-center mx-auto"
+                      className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 flex items-center mx-auto text-sm sm:text-base"
                     >
-                      <Library className="mr-2 h-5 w-5" />
-                      Ver Todas las Novelas Finalizadas
+                      <Library className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                      Ver Todas ({adminState.novels.filter(novel => novel.estado === 'finalizada').length})
                     </button>
-                    <p className="text-sm text-gray-600 mt-3 max-w-md mx-auto">
-                      {adminState.novels.filter(novel => novel.estado === 'finalizada').length} novelas finalizadas
-                    </p>
                   </div>
+                  )}
                 </>
               ) : (
                 <div className="bg-green-50 border border-green-200 rounded-xl p-8 text-center">
@@ -581,7 +561,7 @@ export function Home() {
         </section>
 
         {/* Popular Movies */}
-        <section id="movies" className="mb-12">
+        <section className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center">
               <Clapperboard className="mr-2 h-6 w-6 text-blue-500" />
@@ -595,17 +575,15 @@ export function Home() {
               <ChevronRight className="ml-1 h-4 w-4" />
             </Link>
           </div>
-          <ScrollableSection>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {popularMovies.map((movie) => (
-              <div key={`movie-wrapper-${movie.id}`} className="flex-shrink-0 w-72">
-                <MovieCard item={movie} type="movie" />
-              </div>
+              <MovieCard key={movie.id} item={movie} type="movie" />
             ))}
-          </ScrollableSection>
+          </div>
         </section>
 
         {/* Popular TV Shows */}
-        <section id="tv-shows" className="mb-12">
+        <section className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center">
               <Monitor className="mr-2 h-6 w-6 text-purple-500" />
@@ -619,20 +597,18 @@ export function Home() {
               <ChevronRight className="ml-1 h-4 w-4" />
             </Link>
           </div>
-          <ScrollableSection>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {popularTVShows.map((show) => (
-              <div key={`tv-wrapper-${show.id}`} className="flex-shrink-0 w-72">
-                <MovieCard item={show} type="tv" />
-              </div>
+              <MovieCard key={show.id} item={show} type="tv" />
             ))}
-          </ScrollableSection>
+          </div>
         </section>
 
         {/* Popular Anime */}
-        <section id="anime" className="mb-12">
+        <section className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Zap className="mr-2 h-6 w-6 text-yellow-500" />
+              <Sparkles className="mr-2 h-6 w-6 text-pink-500" />
               Anime Destacado
             </h2>
             <Link
@@ -643,13 +619,11 @@ export function Home() {
               <ChevronRight className="ml-1 h-4 w-4" />
             </Link>
           </div>
-          <ScrollableSection>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {popularAnime.map((anime) => (
-              <div key={`anime-wrapper-${anime.id}`} className="flex-shrink-0 w-72">
-                <MovieCard item={anime} type="tv" />
-              </div>
+              <MovieCard key={anime.id} item={anime} type="tv" />
             ))}
-          </ScrollableSection>
+          </div>
         </section>
 
         {/* Last Update Info (Hidden from users) */}
@@ -659,13 +633,10 @@ export function Home() {
       </div>
       
       {/* Modal de Novelas */}
-      <NovelasModal
-        isOpen={showNovelasModal}
-        onClose={() => setShowNovelasModal(false)}
+      <NovelasModal 
+        isOpen={showNovelasModal} 
+        onClose={() => setShowNovelasModal(false)} 
       />
-
-      {/* Quick Navigation Menu */}
-      <QuickNavMenu />
     </div>
   );
 }
