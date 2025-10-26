@@ -302,6 +302,7 @@ export function Home() {
                         const dateB = new Date(b.createdAt || 0).getTime();
                         return dateB - dateA;
                       })}
+                    showNewBadge={true}
                   />
                 </div>
               ) : (

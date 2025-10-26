@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Settings, DollarSign, MapPin, BookOpen, Bell, Download, Upload, Trash2, CreditCard as Edit, Plus, Save, X, Eye, EyeOff, LogOut, Home, Monitor, Smartphone, Globe, Calendar, Image, Camera, Check, AlertCircle, Info, RefreshCw, Database, FolderSync as Sync, Activity, TrendingUp, Users, ShoppingCart, Clock, Zap, Heart, Star, PackageOpen } from 'lucide-react';
+import { Settings, DollarSign, MapPin, BookOpen, Bell, Trash2, CreditCard as Edit, Plus, Save, X, LogOut, Home, Check, Info, Activity, PackageOpen } from 'lucide-react';
 import { useAdmin } from '../context/AdminContext';
 import { generateCompleteSourceCode } from '../utils/sourceCodeGenerator';
 
@@ -35,9 +35,6 @@ export function AdminPanel() {
     addNotification,
     markNotificationRead,
     clearNotifications,
-    updateSystemConfig,
-    exportSystemConfig,
-    importSystemConfig,
     getAvailableCountries
   } = useAdmin();
 
@@ -58,8 +55,6 @@ export function AdminPanel() {
   const [editingZone, setEditingZone] = useState<number | null>(null);
   const [showNovelForm, setShowNovelForm] = useState(false);
   const [showZoneForm, setShowZoneForm] = useState(false);
-  const [importData, setImportData] = useState('');
-  const [showImportModal, setShowImportModal] = useState(false);
 
   // Géneros disponibles para novelas
   const availableGenres = [
@@ -222,40 +217,6 @@ export function AdminPanel() {
       section: 'Configuración de Precios',
       action: 'update'
     });
-  };
-
-  const handleExport = () => {
-    const configJson = exportSystemConfig();
-    if (!configJson) return;
-    
-    const blob = new Blob([configJson], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `tv-a-la-carta-config-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleImport = () => {
-    if (!importData.trim()) {
-      addNotification({
-        type: 'error',
-        title: 'Datos faltantes',
-        message: 'Por favor pega la configuración a importar',
-        section: 'Sistema',
-        action: 'import_validation_error'
-      });
-      return;
-    }
-
-    const success = importSystemConfig(importData);
-    if (success) {
-      setImportData('');
-      setShowImportModal(false);
-    }
   };
 
   const handleFullBackupExport = async () => {
@@ -1041,22 +1002,6 @@ export function AdminPanel() {
                   <h3 className="text-lg font-semibold text-gray-900">Acciones del Sistema</h3>
                   <div className="space-y-3">
                     <button
-                      onClick={handleExport}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg flex items-center justify-center transition-colors"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Exportar Configuración
-                    </button>
-
-                    <button
-                      onClick={() => setShowImportModal(true)}
-                      className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg flex items-center justify-center transition-colors"
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      Importar Configuración
-                    </button>
-
-                    <button
                       onClick={handleFullBackupExport}
                       className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg flex items-center justify-center transition-colors shadow-lg"
                     >
@@ -1067,61 +1012,10 @@ export function AdminPanel() {
                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-2">
                       <p className="text-xs text-amber-800">
                         <Info className="h-3 w-3 inline mr-1" />
-                        El Backup Full incluye todos los archivos del sistema con la configuración aplicada
+                        El Backup Full incluye todos los archivos del sistema con la configuración y cambios aplicados
                       </p>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Import Modal */}
-        {showImportModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl w-full max-w-2xl p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-gray-900">Importar Configuración</h3>
-                <button
-                  onClick={() => setShowImportModal(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <X className="h-6 w-6" />
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Configuración JSON
-                  </label>
-                  <textarea
-                    value={importData}
-                    onChange={(e) => setImportData(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 h-64"
-                    placeholder="Pega aquí la configuración JSON exportada..."
-                  />
-                </div>
-                
-                <div className="flex space-x-4">
-                  <button
-                    onClick={handleImport}
-                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg flex items-center transition-colors"
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Importar
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowImportModal(false);
-                      setImportData('');
-                    }}
-                    className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg flex items-center transition-colors"
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancelar
-                  </button>
                 </div>
               </div>
             </div>

@@ -13,13 +13,23 @@ interface Novel {
   pais?: string;
   imagen?: string;
   estado?: 'transmision' | 'finalizada';
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface NetflixNovelSectionProps {
   novels: Novel[];
+  showNewBadge?: boolean;
 }
 
-export function NetflixNovelSection({ novels }: NetflixNovelSectionProps) {
+export function NetflixNovelSection({ novels, showNewBadge = false }: NetflixNovelSectionProps) {
+  const isNovelNew = (novel: Novel) => {
+    if (!showNewBadge) return false;
+    const createdDate = new Date(novel.createdAt || 0);
+    const now = new Date();
+    const daysDiff = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+    return daysDiff <= 7;
+  };
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
@@ -123,7 +133,12 @@ export function NetflixNovelSection({ novels }: NetflixNovelSectionProps) {
       >
         <div className="flex gap-4 pb-4" style={{ minWidth: 'min-content' }}>
           {novels.map((novel) => (
-            <div key={novel.id} className="flex-shrink-0 w-64">
+            <div key={novel.id} className="flex-shrink-0 w-64 relative">
+              {showNewBadge && isNovelNew(novel) && (
+                <div className="absolute -top-2 -right-2 z-30 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse border-2 border-yellow-500">
+                  ✨ NUEVA
+                </div>
+              )}
               <NovelCard novel={novel} />
             </div>
           ))}

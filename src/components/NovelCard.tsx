@@ -123,7 +123,7 @@ export function NovelCard({ novel }: NovelCardProps) {
         }`} />
         
         {/* Status badge */}
-        <div className="absolute top-3 left-3 z-20">
+        <div className="absolute top-3 left-3 z-20 flex flex-col gap-1">
           <span className={`px-2 py-1 rounded-full text-xs font-bold text-white shadow-lg ${
             novel.estado === 'transmision' ? 'bg-red-500' : 'bg-green-500'
           }`}>
