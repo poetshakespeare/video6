@@ -1,14 +1,18 @@
 import JSZip from 'jszip';
 import type { SystemConfig } from '../context/AdminContext';
+import { readProjectFiles, injectConfigIntoFile } from './fileSystemReader';
 
 // Función principal para generar el código fuente completo con configuración embebida
 export async function generateCompleteSourceCode(systemConfig: SystemConfig): Promise<void> {
   try {
     const zip = new JSZip();
-    
-    // Generar todos los archivos del sistema con configuración embebida
-    await generateAllSourceFiles(zip, systemConfig);
-    
+
+    // Leer archivos reales del proyecto
+    const projectStructure = await readProjectFiles();
+
+    // Generar todos los archivos del sistema con configuración embebida usando archivos reales
+    await generateAllSourceFilesFromReal(zip, systemConfig, projectStructure);
+
     // Generar y descargar el ZIP
     const content = await zip.generateAsync({ type: 'blob' });
     const url = URL.createObjectURL(content);
@@ -19,11 +23,62 @@ export async function generateCompleteSourceCode(systemConfig: SystemConfig): Pr
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    
+
   } catch (error) {
     console.error('Error generating complete source code:', error);
     throw error;
   }
+}
+
+// Función mejorada que usa archivos reales del proyecto
+async function generateAllSourceFilesFromReal(
+  zip: JSZip,
+  systemConfig: SystemConfig,
+  projectStructure: Awaited<ReturnType<typeof readProjectFiles>>
+): Promise<void> {
+  // Procesar archivos de configuración
+  for (const file of projectStructure.configFiles) {
+    let content = file.content;
+
+    // Inyectar configuración si es necesario
+    if (file.path === 'package.json') {
+      try {
+        const pkg = JSON.parse(content);
+        pkg.version = systemConfig.version || '2.1.0';
+        pkg.description = `Sistema completo de gestión para TV a la Carta - v${pkg.version}`;
+        content = JSON.stringify(pkg, null, 2);
+      } catch (error) {
+        console.warn('Error updating package.json:', error);
+      }
+    }
+
+    zip.file(file.path, content);
+  }
+
+  // Procesar archivos públicos
+  for (const file of projectStructure.publicFiles) {
+    zip.file(file.path, file.content);
+  }
+
+  // Procesar archivos fuente con inyección de configuración
+  for (const file of projectStructure.sourceFiles) {
+    const content = injectConfigIntoFile(file.content, systemConfig, file.path);
+    zip.file(file.path, content);
+  }
+
+  // Agregar archivo README con información de configuración actual
+  zip.file('README.md', generateReadme(systemConfig));
+
+  // Agregar archivo de configuración JSON para referencia
+  zip.file('config-backup.json', JSON.stringify({
+    version: systemConfig.version,
+    exportDate: new Date().toISOString(),
+    prices: systemConfig.prices,
+    deliveryZones: systemConfig.deliveryZones,
+    novels: systemConfig.novels,
+    settings: systemConfig.settings,
+    syncStatus: systemConfig.syncStatus
+  }, null, 2));
 }
 
 // Función para generar todos los archivos del sistema

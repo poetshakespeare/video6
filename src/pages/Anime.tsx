@@ -67,21 +67,26 @@ export function Anime() {
           </p>
 
           {/* Category Filter */}
-          <div className="flex items-center space-x-1 bg-white rounded-lg p-1 shadow-sm w-fit">
-            <Filter className="h-4 w-4 text-gray-500 ml-2" />
-            {Object.entries(categoryTitles).map(([key, title]) => (
-              <button
-                key={key}
-                onClick={() => handleCategoryChange(key as AnimeCategory)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  category === key
-                    ? 'bg-pink-600 text-white'
-                    : 'text-gray-600 hover:text-pink-600 hover:bg-pink-50'
-                }`}
-              >
-                {title}
-              </button>
-            ))}
+          <div className="bg-white rounded-lg p-3 sm:p-4 shadow-sm w-full">
+            <div className="flex items-center mb-3">
+              <Filter className="h-4 w-4 text-gray-500 mr-2" />
+              <span className="text-sm font-medium text-gray-700">Categoría:</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(categoryTitles).map(([key, title]) => (
+                <button
+                  key={key}
+                  onClick={() => handleCategoryChange(key as AnimeCategory)}
+                  className={`px-3 sm:px-4 py-2 sm:py-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-300 ${
+                    category === key
+                      ? 'bg-pink-600 text-white shadow-md transform scale-105'
+                      : 'text-gray-600 hover:text-pink-600 hover:bg-pink-50 border border-gray-200'
+                  }`}
+                >
+                  {title}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

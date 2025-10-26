@@ -19,6 +19,9 @@ export function NetflixSection({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [touchStartX, setTouchStartX] = useState(0);
+  const [touchEndX, setTouchEndX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   const checkScroll = () => {
     if (scrollRef.current) {
@@ -42,6 +45,35 @@ export function NetflixSection({
 
       setTimeout(checkScroll, 300);
     }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    setTouchEndX(e.touches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+
+    const swipeThreshold = 50;
+    const swipeDistance = touchStartX - touchEndX;
+
+    if (Math.abs(swipeDistance) > swipeThreshold) {
+      if (swipeDistance > 0) {
+        scroll('right');
+      } else {
+        scroll('left');
+      }
+    }
+
+    setTouchStartX(0);
+    setTouchEndX(0);
   };
 
   React.useEffect(() => {
@@ -95,6 +127,9 @@ export function NetflixSection({
         <div
           ref={scrollRef}
           onScroll={checkScroll}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           className="overflow-x-auto scrollbar-hide -mx-4 sm:mx-0"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >

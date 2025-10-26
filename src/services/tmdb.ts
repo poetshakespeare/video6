@@ -490,26 +490,26 @@ class TMDBService {
 
   // Trending content - synchronized with TMDB
   async getTrendingAll(timeWindow: 'day' | 'week' = 'day', page: number = 1): Promise<APIResponse<Movie | TVShow>> {
-    // Get trending from multiple regions for comprehensive coverage
-    const [globalTrending, spanishTrending, usTrending] = await Promise.all([
-      this.fetchData(`/trending/all/${timeWindow}?page=${page}`, page === 1),
+    // Get trending from multiple regions for comprehensive coverage, prioritizing Spanish
+    const [spanishTrending, globalTrending, usTrending] = await Promise.all([
       this.fetchData(`/trending/all/${timeWindow}?language=es-ES&page=${page}&region=ES`, page === 1),
-      this.fetchData(`/trending/all/${timeWindow}?language=en-US&page=${page}&region=US`, page === 1)
+      this.fetchData(`/trending/all/${timeWindow}?language=es-ES&page=${page}`, page === 1),
+      this.fetchData(`/trending/all/${timeWindow}?language=es-ES&page=${page}&region=US`, page === 1)
     ]);
-    
+
     const combinedResults = [
-      ...globalTrending.results,
-      ...spanishTrending.results.filter(item => 
-        !globalTrending.results.some(globalItem => globalItem.id === item.id)
-      ),
-      ...usTrending.results.filter(item => 
-        !globalTrending.results.some(globalItem => globalItem.id === item.id) &&
+      ...spanishTrending.results,
+      ...globalTrending.results.filter(item =>
         !spanishTrending.results.some(spanishItem => spanishItem.id === item.id)
+      ),
+      ...usTrending.results.filter(item =>
+        !spanishTrending.results.some(spanishItem => spanishItem.id === item.id) &&
+        !globalTrending.results.some(globalItem => globalItem.id === item.id)
       )
     ];
-    
+
     return {
-      ...globalTrending,
+      ...spanishTrending,
       results: contentFilterService.filterContent(this.removeDuplicates(combinedResults))
     };
   }
@@ -586,7 +586,7 @@ class TMDBService {
   // Get fresh trending content for hero carousel (no duplicates)
   async getHeroContent(): Promise<(Movie | TVShow)[]> {
     try {
-      // Get the most current and diverse content for hero
+      // Get the most current and diverse content for hero with Spanish language priority
       const [trendingDay, trendingWeek, popularMovies, popularTV, nowPlayingMovies, airingTodayTV] = await Promise.all([
         this.getTrendingAll('day', 1),
         this.getTrendingAll('week', 1),
@@ -607,7 +607,31 @@ class TMDBService {
       ];
 
       // Remove duplicates and return top items
-      return contentFilterService.filterContent(this.removeDuplicates(combinedItems)).slice(0, 12);
+      const uniqueItems = contentFilterService.filterContent(this.removeDuplicates(combinedItems)).slice(0, 12);
+
+      // Ensure all items have Spanish overview by fetching details if needed
+      const itemsWithSpanishOverview = await Promise.all(
+        uniqueItems.map(async (item) => {
+          // If overview is missing or very short, try to get it from details
+          if (!item.overview || item.overview.trim().length < 20) {
+            try {
+              const isMovie = 'title' in item;
+              const details = isMovie
+                ? await this.getMovieDetails(item.id)
+                : await this.getTVShowDetails(item.id);
+
+              if (details && details.overview) {
+                return { ...item, overview: details.overview };
+              }
+            } catch (error) {
+              console.warn(`Could not fetch details for item ${item.id}`);
+            }
+          }
+          return item;
+        })
+      );
+
+      return itemsWithSpanishOverview;
     } catch (error) {
       console.error('Error fetching hero content:', error);
       return [];

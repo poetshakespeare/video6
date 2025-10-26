@@ -10,6 +10,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { NovelasModal } from '../components/NovelasModal';
 import { NetflixSection } from '../components/NetflixSection';
+import { NetflixNovelSection } from '../components/NetflixNovelSection';
 import { FloatingNav } from '../components/FloatingNav';
 import type { Movie, TVShow } from '../types/movie';
 
@@ -54,42 +55,24 @@ export function Home() {
   
   const getNovelTrendingContent = (timeWindow: TrendingTimeWindow): any[] => {
     const novels = adminState.novels || [];
-    
+
     if (timeWindow === 'day') {
-      // Show novels currently airing
       return novels.filter(novel => novel.estado === 'transmision').slice(0, 12);
     } else {
-      // Show recently finished novels
       return novels.filter(novel => novel.estado === 'finalizada').slice(0, 10);
     }
   };
 
-  const getCountryFlag = (country: string) => {
-    const flags: { [key: string]: string } = {
-      'Turquía': '🇹🇷',
-      'Cuba': '🇨🇺',
-      'México': '🇲🇽',
-      'Brasil': '🇧🇷',
-      'Colombia': '🇨🇴',
-      'Argentina': '🇦🇷',
-      'España': '🇪🇸',
-      'Estados Unidos': '🇺🇸',
-      'Corea del Sur': '🇰🇷',
-      'India': '🇮🇳',
-      'Reino Unido': '🇬🇧',
-      'Francia': '🇫🇷',
-      'Italia': '🇮🇹',
-      'Alemania': '🇩🇪',
-      'Japón': '🇯🇵',
-      'China': '🇨🇳',
-      'Rusia': '🇷🇺'
-    };
-    return flags[country] || '🌍';
-  };
   const fetchAllContent = async () => {
     try {
       setLoading(true);
-      
+
+      // Clear hero content cache to ensure fresh Spanish content
+      const heroKeys = Object.keys(localStorage).filter(key =>
+        key.includes('trending') || key.includes('fresh_')
+      );
+      heroKeys.forEach(key => localStorage.removeItem(key));
+
       // Get hero content first (no duplicates)
       const heroContent = await tmdbService.getHeroContent();
       setHeroItems(heroContent);
@@ -272,15 +255,20 @@ export function Home() {
             </div>
           </div>
           
-          {/* Movies and TV Shows */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8">
+          {/* Movies and TV Shows with Netflix-style carousel */}
+          <NetflixSection
+            title=""
+            showViewAll={false}
+          >
             {trendingContent.map((item) => {
               const itemType = 'title' in item ? 'movie' : 'tv';
               return (
-                <MovieCard key={`trending-${itemType}-${item.id}`} item={item} type={itemType} />
+                <div key={`trending-${itemType}-${item.id}`} className="flex-shrink-0 w-64">
+                  <MovieCard item={item} type={itemType} />
+                </div>
               );
             })}
-          </div>
+          </NetflixSection>
           
         </section>
 
@@ -290,83 +278,32 @@ export function Home() {
           {adminState.novels && adminState.novels.length > 0 ? (
             <>
               {adminState.novels.filter(novel => novel.estado === 'transmision').length > 0 ? (
-                <NetflixSection
-                  title="Novelas en Transmisión"
-                  icon={
-                    <div className="bg-gradient-to-r from-red-500 to-pink-500 p-2 rounded-xl shadow-lg">
-                      <Radio className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                    </div>
-                  }
-                  showViewAll={true}
-                  onViewAllClick={() => setShowNovelasModal(true)}
-                >
-                  {adminState.novels
-                    .filter(novel => novel.estado === 'transmision')
-                    .map((novel) => (
-                      <Link
-                        to={`/novel/${novel.id}`}
-                        key={`novel-live-${novel.id}`}
-                        className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105 border border-gray-200 hover:border-red-300 flex-shrink-0 w-40 sm:w-44 md:w-48 lg:w-52"
-                      >
-                          <div className="relative">
-                            <img
-                              src={novel.imagen || (() => {
-                                const genreImages = {
-                                  'Drama': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop',
-                                  'Romance': 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=300&h=400&fit=crop',
-                                  'Acción': 'https://images.unsplash.com/photo-1489599843253-c76cc4bcb8cf?w=300&h=400&fit=crop',
-                                  'Comedia': 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=300&h=400&fit=crop',
-                                  'Familia': 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=300&h=400&fit=crop'
-                                };
-                                return genreImages[novel.genero as keyof typeof genreImages] || 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=400&fit=crop';
-                              })()}
-                              alt={novel.titulo}
-                              className="w-full h-56 sm:h-60 md:h-64 lg:h-72 object-cover group-hover:scale-105 transition-transform duration-300"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=400&fit=crop';
-                              }}
-                            />
-                            <div className="absolute top-2 left-2">
-                              <span className="bg-red-500 px-2 py-1 rounded-full text-xs font-bold text-white shadow-lg animate-pulse flex items-center">
-                                <Radio className="h-3 w-3 mr-1" />
-                                EN VIVO
-                              </span>
-                            </div>
-                            <div className="absolute top-2 right-2">
-                              <span className="bg-black/60 text-white px-2 py-1 rounded-lg text-xs font-medium">
-                                {getCountryFlag(novel.pais || 'No especificado')}
-                              </span>
-                            </div>
-                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                              <div className="text-white text-xs">
-                                <div className="flex items-center justify-between">
-                                  <span className="bg-white/20 px-2 py-1 rounded-full text-xs font-medium">
-                                    {novel.año}
-                                  </span>
-                                  <span className="bg-red-500/80 px-2 py-1 rounded-full text-xs font-bold animate-pulse">
-                                    {novel.capitulos} cap.
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="p-3">
-                            <h4 className="font-bold text-gray-900 text-xs sm:text-sm line-clamp-2 mb-2 group-hover:text-red-600 transition-colors leading-tight">
-                              {novel.titulo}
-                            </h4>
-                            <div className="text-center bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-2 border border-red-200">
-                              <span className="text-xs sm:text-sm font-bold text-red-600">
-                                ${(novel.capitulos * currentPrices.novelPricePerChapter).toLocaleString()}
-                              </span>
-                              <div className="text-xs text-gray-500">
-                                {novel.capitulos} cap.
-                              </div>
-                            </div>
-                          </div>
-                      </Link>
-                    ))}
-                </NetflixSection>
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                      <div className="bg-gradient-to-r from-red-500 to-pink-500 p-2 rounded-xl shadow-lg mr-3">
+                        <Radio className="h-5 w-5 text-white" />
+                      </div>
+                      Novelas en Transmisión
+                    </h2>
+                    <button
+                      onClick={() => setShowNovelasModal(true)}
+                      className="text-red-600 hover:text-red-700 font-medium flex items-center transition-colors"
+                    >
+                      Ver todas
+                      <ChevronRight className="h-5 w-5 ml-1" />
+                    </button>
+                  </div>
+                  <NetflixNovelSection
+                    novels={adminState.novels
+                      .filter(novel => novel.estado === 'transmision')
+                      .sort((a, b) => {
+                        const dateA = new Date(a.createdAt || 0).getTime();
+                        const dateB = new Date(b.createdAt || 0).getTime();
+                        return dateB - dateA;
+                      })}
+                  />
+                </div>
               ) : (
                 <div className="bg-red-50 border border-red-200 rounded-xl p-8 text-center">
                   <div className="bg-red-100 p-4 rounded-full w-fit mx-auto mb-4">
@@ -408,83 +345,32 @@ export function Home() {
           {adminState.novels && adminState.novels.length > 0 ? (
             <>
               {adminState.novels.filter(novel => novel.estado === 'finalizada').length > 0 ? (
-                <NetflixSection
-                  title="Novelas Finalizadas"
-                  icon={
-                    <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-2 rounded-xl shadow-lg">
-                      <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-                    </div>
-                  }
-                  showViewAll={true}
-                  onViewAllClick={() => setShowNovelasModal(true)}
-                >
-                  {adminState.novels
-                    .filter(novel => novel.estado === 'finalizada')
-                    .map((novel) => (
-                      <Link
-                        to={`/novel/${novel.id}`}
-                        key={`novel-finished-${novel.id}`}
-                        className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:scale-105 border border-gray-200 hover:border-green-300 flex-shrink-0 w-40 sm:w-44 md:w-48 lg:w-52"
-                      >
-                          <div className="relative">
-                            <img
-                              src={novel.imagen || (() => {
-                                const genreImages = {
-                                  'Drama': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop',
-                                  'Romance': 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=300&h=400&fit=crop',
-                                  'Acción': 'https://images.unsplash.com/photo-1489599843253-c76cc4bcb8cf?w=300&h=400&fit=crop',
-                                  'Comedia': 'https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=300&h=400&fit=crop',
-                                  'Familia': 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=300&h=400&fit=crop'
-                                };
-                                return genreImages[novel.genero as keyof typeof genreImages] || 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=400&fit=crop';
-                              })()}
-                              alt={novel.titulo}
-                              className="w-full h-56 sm:h-60 md:h-64 lg:h-72 object-cover group-hover:scale-105 transition-transform duration-300"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.src = 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=300&h=400&fit=crop';
-                              }}
-                            />
-                            <div className="absolute top-2 left-2">
-                              <span className="bg-green-500 px-2 py-1 rounded-full text-xs font-bold text-white shadow-lg flex items-center">
-                                <CheckCircle2 className="h-3 w-3 mr-1" />
-                                COMPLETA
-                              </span>
-                            </div>
-                            <div className="absolute top-2 right-2">
-                              <span className="bg-black/60 text-white px-2 py-1 rounded-lg text-xs font-medium">
-                                {getCountryFlag(novel.pais || 'No especificado')}
-                              </span>
-                            </div>
-                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                              <div className="text-white text-xs">
-                                <div className="flex items-center justify-between">
-                                  <span className="bg-white/20 px-2 py-1 rounded-full text-xs font-medium">
-                                    {novel.año}
-                                  </span>
-                                  <span className="bg-green-500/80 px-2 py-1 rounded-full text-xs font-bold">
-                                    {novel.capitulos} cap.
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="p-3">
-                            <h4 className="font-bold text-gray-900 text-xs sm:text-sm line-clamp-2 mb-2 group-hover:text-green-600 transition-colors leading-tight">
-                              {novel.titulo}
-                            </h4>
-                            <div className="text-center bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-2 border border-green-200">
-                              <span className="text-xs sm:text-sm font-bold text-green-600">
-                                ${(novel.capitulos * currentPrices.novelPricePerChapter).toLocaleString()}
-                              </span>
-                              <div className="text-xs text-gray-500">
-                                {novel.capitulos} cap.
-                              </div>
-                            </div>
-                          </div>
-                      </Link>
-                    ))}
-                </NetflixSection>
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                      <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-2 rounded-xl shadow-lg mr-3">
+                        <CheckCircle2 className="h-5 w-5 text-white" />
+                      </div>
+                      Novelas Finalizadas
+                    </h2>
+                    <button
+                      onClick={() => setShowNovelasModal(true)}
+                      className="text-green-600 hover:text-green-700 font-medium flex items-center transition-colors"
+                    >
+                      Ver todas
+                      <ChevronRight className="h-5 w-5 ml-1" />
+                    </button>
+                  </div>
+                  <NetflixNovelSection
+                    novels={adminState.novels
+                      .filter(novel => novel.estado === 'finalizada')
+                      .sort((a, b) => {
+                        const dateA = new Date(a.createdAt || 0).getTime();
+                        const dateB = new Date(b.createdAt || 0).getTime();
+                        return dateB - dateA;
+                      })}
+                  />
+                </div>
               ) : (
                 <div className="bg-green-50 border border-green-200 rounded-xl p-8 text-center">
                   <div className="bg-green-100 p-4 rounded-full w-fit mx-auto mb-4">

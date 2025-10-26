@@ -290,7 +290,9 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
               </div>
               
               <p className="text-white/85 text-xl leading-relaxed mb-8 line-clamp-3 max-w-2xl">
-                {currentItem.overview || 'Sin descripción disponible.'}
+                {currentItem.overview && currentItem.overview.trim() !== ''
+                  ? currentItem.overview
+                  : 'Una emocionante historia que cautivará tu atención. Descubre más detalles en la información completa.'}
               </p>
 
               <div className="flex space-x-4">
