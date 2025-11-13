@@ -1,0 +1,40 @@
+.pageCenter {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pageCenter main {
+  box-shadow: var(--shadow-2);
+  background: var(--white);
+  min-height: 17rem;
+  width: 95vw;
+  letter-spacing: var(--letterSpacing);
+  max-width: 500px;
+}
+
+.pageCenter header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0rem;
+  padding: 2rem 1.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.notActiveLinkCSS {
+  padding-bottom: 0.25rem;
+  font-size: 1.15rem;
+}
+
+.activeLinkCSS {
+  padding-bottom: 0.25rem;
+  color: var(--primary-500);
+  font-size: 1.15rem;
+}
+
+@media screen and (min-width: 768px) {
+  .pageCenter header {
+    padding: 2rem;
+    padding-bottom: 0.5rem;
+  }
+}

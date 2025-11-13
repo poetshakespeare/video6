@@ -1,0 +1,29 @@
+.form {
+  background: var(--white);
+  padding: 1rem 1.5rem;
+  border-radius: var(--borderRadius);
+  box-shadow: var(-shadow-2);
+}
+
+.form div {
+  margin-bottom: 0.5rem;
+}
+
+.form label {
+  margin-bottom: 0.25rem;
+  letter-spacing: var(--letter-spacing);
+}
+
+.formBtnContainer {
+  margin: 2rem 0;
+  min-width: 100%;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+@media screen and (min-width: 768px) {
+  .form {
+    padding: 1rem 2rem;
+  }
+}
