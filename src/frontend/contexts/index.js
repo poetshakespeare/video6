@@ -1,5 +1,5 @@
-import AuthContextProvider from './AuthContextProvider';
-import FiltersContextProvider from './FiltersContextProvider';
+import AuthContextProvider from './AuthContextProvider.jsx';
+import FiltersContextProvider from './FiltersContextProvider.jsx';
 import ProductsContextProvider from './ProductsContextProvider';
 
 export { AuthContextProvider, ProductsContextProvider, FiltersContextProvider };
