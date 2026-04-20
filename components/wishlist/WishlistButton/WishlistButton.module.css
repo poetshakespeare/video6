@@ -1,9 +1,0 @@
-.button {
-  background-color: transparent;
-  border: 1px solid transparent;
-  cursor: pointer;
-}
-
-.button:disabled {
-  opacity: 0.5;
-}
